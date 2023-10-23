@@ -1,5 +1,10 @@
 import openai
 
+translate_text_exception = Exception(
+    "Error while translating text"
+)
+
+
 def translate_text(language, text):
     """
       Translates a given text into the specified language using OpenAI's model.
@@ -27,4 +32,4 @@ def translate_text(language, text):
 
     except Exception as e:
         print(f"Error during translation: {e}")
-        return text
+        raise translate_text_exception

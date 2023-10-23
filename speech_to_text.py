@@ -1,7 +1,12 @@
 import os
 import tempfile
-from pydub import AudioSegment
+
 import openai
+from pydub import AudioSegment
+
+speech_to_text_exception = Exception(
+    "Error while processing speech to text"
+)
 
 
 def speech_to_text(video_path):
@@ -43,8 +48,8 @@ def speech_to_text(video_path):
 
     except ValueError as ve:
         print(f"ValueError: {str(ve)}")
-        return None
+        raise speech_to_text_exception
     except Exception as e:
         # Handle generic exceptions and provide feedback
         print(f"An error occurred: {str(e)}")
-        return None
+        raise speech_to_text_exception

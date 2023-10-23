@@ -1,15 +1,16 @@
 # Local imports
 # from integrations.youtube_utils import youtube_download
 import os
+from datetime import datetime
 
+from fastapi import FastAPI
+
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
 from translation import translate_text
-from integrations.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
-from datetime import datetime
-
-from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -22,8 +23,10 @@ destination_local_file_name = 'original-video.mp4'
 # useId, projectId,
 
 # https://audioland.fly.dev/?original_file_location=XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
+
+
 @app.get("/")
-def generate(original_file_location: str = None):
+def generate(project_id: str, original_file_location: str = None):
 
     # validation for original_file_location and throw exception
     if original_file_location is None:
@@ -38,6 +41,13 @@ def generate(original_file_location: str = None):
     current_time = now.strftime("%H:%M:%S")
     print("Current Time =", current_time)
 
+    # 0. Change project status to "downloading"
+    update_project_status_and_translated_link_by_id(
+        project_id=project_id,
+        status="downloading",
+        translated_file_link=""
+    )
+
     # 1. Download video from cloud storage to local storage
     print('Downloading video from cloud storage...')
     download_blob(source_blob_name, destination_local_file_name)
@@ -45,7 +55,14 @@ def generate(original_file_location: str = None):
 
     local_video_path = destination_local_file_name
 
-    # # 2. Convert video to text
+    # 1.1. Change project status to "translating"
+    update_project_status_and_translated_link_by_id(
+        project_id=project_id,
+        status="translating",
+        translated_file_link=""
+    )
+
+    # 2. Convert video to text
     print('start speech to text, video_path - ', local_video_path)
     text = speech_to_text(local_video_path)
     print("original text - ", text)
@@ -68,10 +85,17 @@ def generate(original_file_location: str = None):
     destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
 
     print('Uploading video from cloud storage...')
-    upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
+    file_public_link = upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
     print('Upload completed, destination_blob_name - ', destination_blob_name)
 
     os.remove(destination_local_file_name)
+
+    # 7. Change project status to "translated"
+    update_project_status_and_translated_link_by_id(
+        project_id=project_id,
+        status="translated",
+        translated_file_link=file_public_link
+    )
 
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
@@ -87,3 +111,6 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
+    project_id = "4kIRz5B1JY0GAO1uj0dE"
+    original_file_location = "XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4"
+    # generate(project_id, original_file_location)

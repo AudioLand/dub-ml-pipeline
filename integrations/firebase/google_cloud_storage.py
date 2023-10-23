@@ -8,26 +8,48 @@ Original file is located at
 """
 
 import os
-from firebase_admin import credentials
-from firebase_admin import storage
-import firebase_admin
 
-# здесь явно загружается Service Account Private Key
-# не уверены, как исправить
-if not firebase_admin._apps:
-    cred = credentials.Certificate('audioland-dub-firebase-adminsdk-xfwtj-4228d1d618.json')
-    firebase_admin.initialize_app(cred)
+from firebase_admin import storage
+
+from integrations.firebase.config import init_firebase
+
+download_blob_exception = Exception(
+    "Error while downloading original file"
+)
+
+upload_blob_and_delete_local_file_exception = Exception(
+    "Error while uploading translated file"
+)
+
+init_firebase()
 
 bucket = storage.bucket(name='audioland-dub.appspot.com')
 
+
 def download_blob(source_blob_name, destination_file_name):
-    blob = bucket.blob(source_blob_name)
-    blob.download_to_filename(destination_file_name)
+    try:
+        blob = bucket.blob(source_blob_name)
+        blob.download_to_filename(destination_file_name)
+    except Exception as e:
+        print(f"Error during downloading file: {e}")
+        raise download_blob_exception
+
 
 def upload_blob_and_delete_local_file(source_file_name, destination_blob_name):
-    blob = bucket.blob(destination_blob_name)
-    blob.upload_from_filename(source_file_name)
-    os.remove(source_file_name)
+    try:
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_filename(source_file_name)
+        os.remove(source_file_name)
+
+        blob.make_public()
+        public_link = blob.public_url
+        print("Public url for this file:", public_link)
+        return public_link
+
+    except Exception as e:
+        print(f"Error during uploading file: {e}")
+        raise upload_blob_and_delete_local_file_exception
+
 
 # source_blob_name = # здесь  'userId/projectId/Original Media File'
 # destination_file_name = # здесь 'userId_projectId_Original Media File'
