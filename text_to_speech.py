@@ -1,10 +1,15 @@
 from elevenlabs import generate, set_api_key
+
 set_api_key("dd435b067e4a6b1fb642f4f9188705e5")
 
 VOICE_MAPPING = {
     "female": "Rachel",
     "male": "Josh"
 }
+
+text_to_speech_exception = Exception(
+    "Error while processing text to speech"
+)
 
 
 def text_to_speech(text, detected_gender):
@@ -23,4 +28,4 @@ def text_to_speech(text, detected_gender):
 
     except Exception as e:
         print(f"[text_to_speech] ERROR: {str(e)}")
-        return None
+        raise text_to_speech_exception
