@@ -113,4 +113,4 @@ if __name__ == "__main__":
     print("main started")
     project_id = "4kIRz5B1JY0GAO1uj0dE"
     original_file_location = "XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4"
-    generate(project_id, original_file_location)
+    # generate(project_id, original_file_location)
