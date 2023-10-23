@@ -45,13 +45,6 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
     current_time = now.strftime("%H:%M:%S")
     print("Current Time =", current_time)
 
-    # 0. Change project status to "downloading"
-    update_project_status_and_translated_link_by_id(
-        project_id=project_id,
-        status="downloading",
-        translated_file_link=""
-    )
-
     # 1. Download video from cloud storage to local storage
     print('Downloading video from cloud storage...')
     download_blob(source_blob_name, destination_local_file_name)
