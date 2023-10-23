@@ -93,7 +93,7 @@ def generate(project_id: str, original_file_location: str = None):
     # 7. Change project status to "translated"
     update_project_status_and_translated_link_by_id(
         project_id=project_id,
-        status="translating",
+        status="translated",
         translated_file_link=file_public_link
     )
 
