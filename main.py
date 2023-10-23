@@ -27,78 +27,84 @@ destination_local_file_name = 'original-video.mp4'
 
 @app.get("/")
 def generate(project_id: str, target_language: str = None, original_file_location: str = None):
+    try:
+        # validation for original_file_location and throw exception
+        if original_file_location is None:
+            raise Exception('original_file_location is None')
 
-    # validation for original_file_location and throw exception
-    if original_file_location is None:
-        raise Exception('original_file_location is None')
+        # validation for target_language and throw exception
+        if target_language is None:
+            raise Exception('target_language is None')
 
-    # validation for target_language and throw exception
-    if target_language is None:
-        raise Exception('target_language is None')
+        # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
+        source_blob_name = original_file_location
 
-    # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
-    source_blob_name = original_file_location
+        # pipeline execution
+        now = datetime.now()
 
-    # pipeline execution
-    now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
 
-    current_time = now.strftime("%H:%M:%S")
-    print("Current Time =", current_time)
+        # 1. Download video from cloud storage to local storage
+        print('Downloading video from cloud storage...')
+        download_blob(source_blob_name, destination_local_file_name)
+        print('Download completed.')
 
-    # 1. Download video from cloud storage to local storage
-    print('Downloading video from cloud storage...')
-    download_blob(source_blob_name, destination_local_file_name)
-    print('Download completed.')
+        local_video_path = destination_local_file_name
 
-    local_video_path = destination_local_file_name
+        # 1.1. Change project status to "translating"
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translating",
+            translated_file_link=""
+        )
 
-    # 1.1. Change project status to "translating"
-    update_project_status_and_translated_link_by_id(
-        project_id=project_id,
-        status="translating",
-        translated_file_link=""
-    )
+        # 2. Convert video to text
+        print('start speech to text, video_path - ', local_video_path)
+        text = speech_to_text(local_video_path)
+        print("original text - ", text)
 
-    # 2. Convert video to text
-    print('start speech to text, video_path - ', local_video_path)
-    text = speech_to_text(local_video_path)
-    print("original text - ", text)
+        # 3. Translate text
+        print('Translating text ...')
+        translated_text = translate_text(target_language, text)
+        print("translated_text - ", translated_text)
 
-    # 3. Translate text
-    print('Translating text ...')
-    translated_text = translate_text(target_language, text)
-    print("translated_text - ", translated_text)
+        # 4. Detect gender of the voice
+        # gender = voice_gender_detection(video_path)
 
-    # 4. Detect gender of the voice
-    # gender = voice_gender_detection(video_path)
+        # 5. Generate audio from translated text
+        print('Text to speech started ...')
+        translated_audio_local_path = text_to_speech(translated_text, 'male')
+        print('Audio generation done')
 
-    # 5. Generate audio from translated text
-    print('Text to speech started ...')
-    translated_audio_local_path = text_to_speech(translated_text, 'male')
-    print('Audio generation done')
+        # 6. Upload audio to cloud storage
+        source_file_name = translated_audio_local_path  # имя файла на локальной машине после обработки сеткой
+        destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
 
-    # 6. Upload audio to cloud storage
-    source_file_name = translated_audio_local_path  # имя файла на локальной машине после обработки сеткой
-    destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
+        print('Uploading video from cloud storage...')
+        file_public_link = upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
+        print('Upload completed, destination_blob_name - ', destination_blob_name)
 
-    print('Uploading video from cloud storage...')
-    file_public_link = upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
-    print('Upload completed, destination_blob_name - ', destination_blob_name)
+        os.remove(destination_local_file_name)
 
-    os.remove(destination_local_file_name)
+        # 7. Change project status to "translated"
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translated",
+            translated_file_link=file_public_link
+        )
 
-    # 7. Change project status to "translated"
-    update_project_status_and_translated_link_by_id(
-        project_id=project_id,
-        status="translated",
-        translated_file_link=file_public_link
-    )
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        print("Job Done! Current Time =", current_time)
 
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("Job Done! Current Time =", current_time)
-
-    return {"status": "it is working!!!"}
+        return {"status": "it is working!!!"}
+    except Exception as e:
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translationError",
+            translated_file_link=""
+        )
 
 
 @app.get("/healthcheck")
