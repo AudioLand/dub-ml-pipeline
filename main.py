@@ -1,5 +1,7 @@
 # Local imports
 # from integrations.youtube_utils import youtube_download
+import os
+
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
@@ -14,12 +16,22 @@ app = FastAPI()
 # youtube_link = "https://youtu.be/WDv4AWk0J3U?si=wL3cKW1PCvinxBDy"
 # video_path = 'test-video-1min.mp4'
 
-source_blob_name = 'XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4'  # this comes from google_cloud_storage.py file
-destination_local_file_name = 'XYClUMP7wEPl8ktysClADpuaPIq2_4kIRz5B1JY0GAO1uj0dE_test-video-1min.mp4'  # this comes from google_cloud_storage.py file
+# source_blob_name = 'XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4'
+destination_local_file_name = 'original-video.mp4'
 
+# useId, projectId,
 
+# https://audioland.fly.dev/?original_file_location=XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
 @app.get("/")
-def generate():
+def generate(original_file_location: str = None):
+
+    # validation for original_file_location and throw exception
+    if original_file_location is None:
+        raise Exception('original_file_location is None')
+
+    # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
+    source_blob_name = original_file_location
+
     # pipeline execution
     now = datetime.now()
 
@@ -52,12 +64,14 @@ def generate():
     print('Audio generation done')
 
     # 6. Upload audio to cloud storage
-    source_file_name = translated_audio_local_path # имя файла на локальной машине после обработки сеткой
-    destination_blob_name = source_blob_name[:-4] + '-translated.mp3' # выгружаем обратно с заменённым окончанием
+    source_file_name = translated_audio_local_path  # имя файла на локальной машине после обработки сеткой
+    destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
 
     print('Uploading video from cloud storage...')
     upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
     print('Upload completed, destination_blob_name - ', destination_blob_name)
+
+    os.remove(destination_local_file_name)
 
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
