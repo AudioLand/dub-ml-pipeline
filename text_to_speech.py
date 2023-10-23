@@ -19,7 +19,7 @@ def text_to_speech(text, detected_gender):
         with open('new_audio.mp3', mode='bw') as f:
             f.write(audio)
 
-        return audio
+        return 'new_audio.mp3'
 
     except Exception as e:
         print(f"[text_to_speech] ERROR: {str(e)}")
