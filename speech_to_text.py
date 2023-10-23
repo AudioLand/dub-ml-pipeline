@@ -7,7 +7,7 @@ import openai
 def speech_to_text(video_path):
     """Convert the audio content of a video into text."""
     # openai.api_key = "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"  # Audioland acc key - not working
-    openai.api_key = "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"  # slava's key
+    openai.api_key = "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"  # slava's key
     try:
         # Check if the file exists
         if not os.path.exists(video_path):

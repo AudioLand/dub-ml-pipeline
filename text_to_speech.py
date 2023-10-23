@@ -8,14 +8,19 @@ VOICE_MAPPING = {
 
 
 def text_to_speech(text, detected_gender):
-    voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
-    audio = generate(
-        text=text,
-        voice=voice,
-        model="eleven_multilingual_v2"
-    )
+    try:
+        voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
+        audio = generate(
+            text=text,
+            voice=voice,
+            model="eleven_multilingual_v2"
+        )
 
-    with open('new_audio.mp3', mode='bx') as f:
-        f.write(audio)
+        with open('new_audio.mp3', mode='bw') as f:
+            f.write(audio)
 
-    return audio
+        return audio
+
+    except Exception as e:
+        print(f"[text_to_speech] ERROR: {str(e)}")
+        return None
