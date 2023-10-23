@@ -1,2 +1,6 @@
 .idea
 venv
+.vscode/
+__pycache__/
+
+audioland-dub-firebase-adminsdk-xfwtj-4228d1d618.json
