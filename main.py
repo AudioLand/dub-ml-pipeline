@@ -26,11 +26,15 @@ destination_local_file_name = 'original-video.mp4'
 
 
 @app.get("/")
-def generate(project_id: str, original_file_location: str = None):
+def generate(project_id: str, target_language: str = None, original_file_location: str = None):
 
     # validation for original_file_location and throw exception
     if original_file_location is None:
         raise Exception('original_file_location is None')
+
+    # validation for target_language and throw exception
+    if target_language is None:
+        raise Exception('target_language is None')
 
     # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
     source_blob_name = original_file_location
@@ -69,7 +73,7 @@ def generate(project_id: str, original_file_location: str = None):
 
     # 3. Translate text
     print('Translating text ...')
-    translated_text = translate_text('ru', text)
+    translated_text = translate_text(target_language, text)
     print("translated_text - ", translated_text)
 
     # 4. Detect gender of the voice
