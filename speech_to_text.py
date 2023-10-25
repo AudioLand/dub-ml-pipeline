@@ -4,6 +4,7 @@ import tempfile
 import openai
 from pydub import AudioSegment
 
+from config.config import OPEN_AI_API_KEY
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 speech_to_text_exception = Exception(
@@ -13,8 +14,7 @@ speech_to_text_exception = Exception(
 
 def speech_to_text(video_path: str, project_id: str):
     """Convert the audio content of a video into text."""
-    # openai.api_key = "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"  # Audioland acc key - not working
-    openai.api_key = "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"  # slava's key
+    openai.api_key = OPEN_AI_API_KEY
     try:
         # Check if the file exists
         if not os.path.exists(video_path):

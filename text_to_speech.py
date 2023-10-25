@@ -1,8 +1,11 @@
+import os
+
 from elevenlabs import generate, set_api_key
 
+from config.config import LABS11_API_KEY
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
-set_api_key("dd435b067e4a6b1fb642f4f9188705e5")
+set_api_key(LABS11_API_KEY)
 
 VOICE_MAPPING = {
     "female": "Rachel",

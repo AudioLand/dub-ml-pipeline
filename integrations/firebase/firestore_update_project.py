@@ -1,4 +1,8 @@
+import os
+
 import requests
+
+from config.config import UPDATE_PROJECT_URL
 
 # def update_project_status_and_translated_link_by_id(
 #     projectId: str,
@@ -24,8 +28,6 @@ import requests
 updating_project_exception = Exception(
     "Error while updating project"
 )
-
-UPDATE_PROJECT_URL = "https://us-central1-audioland-dub.cloudfunctions.net/updateTranslatedProject"
 
 
 def update_project_status_and_translated_link_by_id(
