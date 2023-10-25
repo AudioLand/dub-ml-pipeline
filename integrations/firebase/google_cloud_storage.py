@@ -11,8 +11,9 @@ import os
 
 from firebase_admin import storage
 
-from integrations.firebase.config import init_firebase
+from config.config import BUCKET_NAME
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+from integrations.firebase.init_firebase import init_firebase
 
 download_blob_exception = Exception(
     "Error while downloading original file"
@@ -24,7 +25,8 @@ upload_blob_and_delete_local_file_exception = Exception(
 
 init_firebase()
 
-bucket = storage.bucket(name='audioland-dub.appspot.com')
+
+bucket = storage.bucket(name=BUCKET_NAME)
 
 
 def download_blob(

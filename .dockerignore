@@ -1,5 +1,6 @@
 .idea
 venv
+.github/
 .vscode/
 __pycache__/
 

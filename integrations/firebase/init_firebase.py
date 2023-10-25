@@ -1,7 +1,7 @@
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials
 
-CERTIFICATE_PATH = "integrations/firebase/audioland-dub-firebase-adminsdk-xfwtj-4228d1d618.json"
+from config.config import CERTIFICATE_PATH
 
 
 def init_firebase():
