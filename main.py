@@ -18,7 +18,6 @@ app = FastAPI()
 # video_path = 'test-video-1min.mp4'
 
 # source_blob_name = 'XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4'
-destination_local_file_name = 'original-video.mp4'
 
 # useId, projectId,
 
@@ -49,6 +48,7 @@ def generate(project_id: str, original_file_location: str = None):
     )
 
     # 1. Download video from cloud storage to local storage
+    destination_local_file_name = project_id
     print('Downloading video from cloud storage...')
     download_blob(source_blob_name, destination_local_file_name)
     print('Download completed.')
