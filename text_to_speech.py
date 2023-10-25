@@ -1,5 +1,7 @@
 from elevenlabs import generate, set_api_key
 
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+
 set_api_key("dd435b067e4a6b1fb642f4f9188705e5")
 
 VOICE_MAPPING = {
@@ -12,7 +14,7 @@ text_to_speech_exception = Exception(
 )
 
 
-def text_to_speech(text, detected_gender):
+def text_to_speech(text: str, detected_gender: str, project_id: str):
     try:
         voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
         audio = generate(
@@ -28,4 +30,9 @@ def text_to_speech(text, detected_gender):
 
     except Exception as e:
         print(f"[text_to_speech] ERROR: {str(e)}")
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translationError",
+            translated_file_link=""
+        )
         raise text_to_speech_exception

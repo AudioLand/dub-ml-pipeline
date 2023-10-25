@@ -12,6 +12,7 @@ import os
 from firebase_admin import storage
 
 from integrations.firebase.config import init_firebase
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 download_blob_exception = Exception(
     "Error while downloading original file"
@@ -26,16 +27,29 @@ init_firebase()
 bucket = storage.bucket(name='audioland-dub.appspot.com')
 
 
-def download_blob(source_blob_name, destination_file_name):
+def download_blob(
+    source_blob_name: str,
+    destination_file_name: str,
+    project_id: str
+):
     try:
         blob = bucket.blob(source_blob_name)
         blob.download_to_filename(destination_file_name)
     except Exception as e:
         print(f"Error during downloading file: {e}")
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translationError",
+            translated_file_link=""
+        )
         raise download_blob_exception
 
 
-def upload_blob_and_delete_local_file(source_file_name, destination_blob_name):
+def upload_blob_and_delete_local_file(
+    source_file_name: str,
+    destination_blob_name: str,
+    project_id: str
+):
     try:
         blob = bucket.blob(destination_blob_name)
         blob.upload_from_filename(source_file_name)
@@ -48,6 +62,11 @@ def upload_blob_and_delete_local_file(source_file_name, destination_blob_name):
 
     except Exception as e:
         print(f"Error during uploading file: {e}")
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translationError",
+            translated_file_link=""
+        )
         raise upload_blob_and_delete_local_file_exception
 
 

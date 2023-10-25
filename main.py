@@ -47,7 +47,11 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         # 1. Download video from cloud storage to local storage
         print('Downloading video from cloud storage...')
-        download_blob(source_blob_name, destination_local_file_name)
+        download_blob(
+            source_blob_name,
+            destination_local_file_name,
+            project_id
+        )
         print('Download completed.')
 
         local_video_path = destination_local_file_name
@@ -61,12 +65,19 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         # 2. Convert video to text
         print('start speech to text, video_path - ', local_video_path)
-        text = speech_to_text(local_video_path)
+        text = speech_to_text(
+            local_video_path,
+            project_id
+        )
         print("original text - ", text)
 
         # 3. Translate text
         print('Translating text ...')
-        translated_text = translate_text(target_language, text)
+        translated_text = translate_text(
+            target_language,
+            text,
+            project_id
+        )
         print("translated_text - ", translated_text)
 
         # 4. Detect gender of the voice
@@ -74,7 +85,11 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         # 5. Generate audio from translated text
         print('Text to speech started ...')
-        translated_audio_local_path = text_to_speech(translated_text, 'male')
+        translated_audio_local_path = text_to_speech(
+            translated_text,
+            'male',
+            project_id
+        )
         print('Audio generation done')
 
         # 6. Upload audio to cloud storage
@@ -82,7 +97,11 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
 
         print('Uploading video from cloud storage...')
-        file_public_link = upload_blob_and_delete_local_file(source_file_name, destination_blob_name)
+        file_public_link = upload_blob_and_delete_local_file(
+            source_file_name,
+            destination_blob_name,
+            project_id
+        )
         print('Upload completed, destination_blob_name - ', destination_blob_name)
 
         os.remove(destination_local_file_name)
@@ -100,6 +119,7 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         return {"status": "it is working!!!"}
     except Exception as e:
+        print(f"An error occurred: {str(e)}")
         update_project_status_and_translated_link_by_id(
             project_id=project_id,
             status="translationError",
