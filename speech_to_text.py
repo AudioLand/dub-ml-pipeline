@@ -4,12 +4,14 @@ import tempfile
 import openai
 from pydub import AudioSegment
 
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+
 speech_to_text_exception = Exception(
     "Error while processing speech to text"
 )
 
 
-def speech_to_text(video_path):
+def speech_to_text(video_path: str, project_id: str):
     """Convert the audio content of a video into text."""
     # openai.api_key = "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"  # Audioland acc key - not working
     openai.api_key = "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"  # slava's key
@@ -52,4 +54,9 @@ def speech_to_text(video_path):
     except Exception as e:
         # Handle generic exceptions and provide feedback
         print(f"An error occurred: {str(e)}")
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translationError",
+            translated_file_link=""
+        )
         raise speech_to_text_exception
