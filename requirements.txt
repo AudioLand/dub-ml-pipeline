@@ -63,3 +63,5 @@ websockets==12.0
 yarl==1.9.2
 firebase_admin
 python-dotenv
+moviepy~=1.0.3
+

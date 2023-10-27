@@ -1,5 +1,6 @@
 # Local imports
 # from integrations.youtube_utils import youtube_download
+
 import os
 from datetime import datetime
 
@@ -7,10 +8,12 @@ from fastapi import FastAPI
 
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
+
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
 from translation import translate_text
+from overlay_audio import overlay_audio
 
 app = FastAPI()
 
@@ -92,6 +95,10 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         )
         print('Audio generation done')
 
+        # 6. Overlay audio on video
+        # first argument is_video: if we translate video - true, else - false 
+        translated_video = overlay_audio(True, video_path, audio_path)
+        
         # 6. Upload audio to cloud storage
         source_file_name = translated_audio_local_path  # имя файла на локальной машине после обработки сеткой
         destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
