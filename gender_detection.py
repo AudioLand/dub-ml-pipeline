@@ -1,7 +1,12 @@
+import os
+
 import requests
 
-API_URL = "https://api-inference.huggingface.co/models/alefiury/wav2vec2-large-xlsr-53-gender-recognition-librispeech"
-headers = {"Authorization": f"Bearer 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"}
+from config.config import GENDER_DETECTION_API_URL, GENDER_DETECTION_BEARER_TOKEN
+
+headers = {
+    "Authorization": f"Bearer {GENDER_DETECTION_BEARER_TOKEN}"
+}
 
 
 # Takes the filename of the audio with the voice
@@ -15,7 +20,7 @@ def voice_gender_detection(filename):
         print(f"Error: {filename} not found.")
         return None
 
-    response = requests.post(API_URL, headers=headers, data=data)
+    response = requests.post(GENDER_DETECTION_API_URL, headers=headers, data=data)
 
     if response.status_code == 200:
         try:
