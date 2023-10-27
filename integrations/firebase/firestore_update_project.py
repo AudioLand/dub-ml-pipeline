@@ -1,5 +1,3 @@
-import os
-
 import requests
 
 from config.config import UPDATE_PROJECT_URL
