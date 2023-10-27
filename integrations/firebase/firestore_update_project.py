@@ -3,6 +3,7 @@ import os
 import requests
 
 from config.config import UPDATE_PROJECT_URL
+from config.logger import catch_error
 
 # def update_project_status_and_translated_link_by_id(
 #     projectId: str,
@@ -46,9 +47,18 @@ def update_project_status_and_translated_link_by_id(
             UPDATE_PROJECT_URL,
             project_fields_to_update,
         )
+
         if not response.ok:
-            raise updating_project_exception
+            catch_error(
+                tag="update_project",
+                error=Exception(f"Firebase Cloud Function Error ({response.status_code}): {response.text}"),
+                project_id=project_id
+            )
 
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        catch_error(
+            tag="update_project",
+            error=e,
+            project_id=project_id
+        )
         raise updating_project_exception

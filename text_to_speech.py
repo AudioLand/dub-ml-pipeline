@@ -3,6 +3,7 @@ import os
 from elevenlabs import generate, set_api_key
 
 from config.config import LABS11_API_KEY
+from config.logger import catch_error
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 set_api_key(LABS11_API_KEY)
@@ -32,10 +33,9 @@ def text_to_speech(text: str, detected_gender: str, project_id: str):
         return 'new_audio.mp3'
 
     except Exception as e:
-        print(f"[text_to_speech] ERROR: {str(e)}")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translationError",
-            translated_file_link=""
+        catch_error(
+            tag="text_to_speech",
+            error=e,
+            project_id=project_id
         )
         raise text_to_speech_exception

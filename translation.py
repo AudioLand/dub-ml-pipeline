@@ -1,5 +1,6 @@
 import openai
 
+from config.logger import catch_error
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 translate_text_exception = Exception(
@@ -33,10 +34,9 @@ def translate_text(language: str, text: str, project_id: str):
         return translated_text
 
     except Exception as e:
-        print(f"Error during translation: {e}")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translationError",
-            translated_file_link=""
+        catch_error(
+            tag="translation",
+            error=e,
+            project_id=project_id
         )
         raise translate_text_exception
