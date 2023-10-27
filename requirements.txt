@@ -64,3 +64,4 @@ firebase_admin
 python-dotenv
 moviepy~=1.0.3
 python-magic
+sentry-sdk
