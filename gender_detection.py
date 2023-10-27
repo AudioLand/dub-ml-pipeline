@@ -1,5 +1,3 @@
-import os
-
 import requests
 
 from config.config import GENDER_DETECTION_API_URL, GENDER_DETECTION_BEARER_TOKEN

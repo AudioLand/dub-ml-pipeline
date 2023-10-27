@@ -27,13 +27,13 @@ app = FastAPI()
 @app.get("/")
 def generate(project_id: str, target_language: str = None, original_file_location: str = None):
     try:
-        # validation for original_file_location and throw exception
-        if original_file_location is None:
-            raise Exception('original_file_location is None')
-
         # validation for target_language and throw exception
         if target_language is None:
             raise Exception('target_language is None')
+
+        # validation for original_file_location and throw exception
+        if original_file_location is None:
+            raise Exception('original_file_location is None')
 
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
         source_blob_name = original_file_location
@@ -46,11 +46,11 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         # 1. Download video from cloud storage to local storage
         print('Downloading video from cloud storage...')
-        destination_local_file_name = project_id
+        destination_local_file_name = project_id + ".mp4"
         download_blob(
-            source_blob_name,
-            destination_local_file_name,
-            project_id
+            source_blob_name=source_blob_name,
+            destination_file_name=destination_local_file_name,
+            project_id=project_id
         )
         print('Download completed.')
 
@@ -66,17 +66,17 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         # 2. Convert video to text
         print('start speech to text, video_path - ', local_video_path)
         text = speech_to_text(
-            local_video_path,
-            project_id
+            video_path=local_video_path,
+            project_id=project_id
         )
         print("original text - ", text)
 
         # 3. Translate text
         print('Translating text ...')
         translated_text = translate_text(
-            target_language,
-            text,
-            project_id
+            language=target_language,
+            text=text,
+            project_id=project_id
         )
         print("translated_text - ", translated_text)
 
@@ -86,9 +86,9 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         # 5. Generate audio from translated text
         print('Text to speech started ...')
         translated_audio_local_path = text_to_speech(
-            translated_text,
-            'male',
-            project_id
+            text=translated_text,
+            project_id=project_id,
+            detected_gender='male',
         )
         print('Audio generation done')
 
@@ -98,9 +98,9 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         print('Uploading video from cloud storage...')
         file_public_link = upload_blob_and_delete_local_file(
-            source_file_name,
-            destination_blob_name,
-            project_id
+            source_file_name=source_file_name,
+            destination_blob_name=destination_blob_name,
+            project_id=project_id
         )
         print('Upload completed, destination_blob_name - ', destination_blob_name)
 
@@ -118,6 +118,7 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         print("Job Done! Current Time =", current_time)
 
         return {"status": "it is working!!!"}
+
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         update_project_status_and_translated_link_by_id(
@@ -134,6 +135,8 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    project_id = "4kIRz5B1JY0GAO1uj0dE"
-    original_file_location = "XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4"
-    # generate(project_id, original_file_location)
+    # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
+    # project_id = "8yFG22MbYelc0SwxELxf"
+    # target_language = "Russian"
+    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    # generate(project_id, target_language, original_file_location)
