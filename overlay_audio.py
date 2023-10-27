@@ -1,24 +1,58 @@
-import os.path
+import moviepy
 from moviepy.editor import *
+from pathlib import Path
+
+SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.avi']
+SUPPORTED_AUDIO_EXTENSIONS = ['.mp3']
 
 
-def overlay_audio(is_video, video_path, audio_path):
-    # Only video formats are supported: mp4 and avi, audio: mp3
-    if is_video:
-        suffix = f'.{os.path.split(video_path)[-1].split(".")[-1]}'
+def overlay_audio(video_path, audio_path):
+    video_path = Path(video_path)
+    audio_path = Path(audio_path)
 
-        translated_video_path = f'{os.path.split(video_path)[-1].removesuffix(suffix)}_translated{suffix}'
+    # Check if paths exist
+    if not video_path.exists() or not audio_path.exists():
+        raise ValueError("Either video or audio path does not exist")
 
-        if os.path.isfile(video_path):
-            if os.path.split(video_path)[-1].endswith(".mp4") or os.path.split(video_path)[-1].endswith(".avi"):
-                video = VideoFileClip(video_path)
+    # Check for supported file extensions
+    if video_path.suffix not in SUPPORTED_VIDEO_EXTENSIONS:
+        raise ValueError(
+            f"Video format '{video_path.suffix}' not supported. Only {SUPPORTED_VIDEO_EXTENSIONS} are supported.")
+    if audio_path.suffix not in SUPPORTED_AUDIO_EXTENSIONS:
+        raise ValueError(
+            f"Audio format '{audio_path.suffix}' not supported. Only {SUPPORTED_AUDIO_EXTENSIONS} are supported.")
 
-                video = video.without_audio()
+    translated_video_path = video_path.parent / f"{video_path.stem}_translated{video_path.suffix}"
 
-                audio = AudioFileClip(audio_path)
-                if audio_path.endswith(".mp3"):
-                    video.audio = audio
-                    video.write_videofile(translated_video_path)
-                    print(f'Translated video saved, path: "{translated_video_path}"')
+    video = VideoFileClip(str(video_path))
+    audio = AudioFileClip(str(audio_path))
 
-                return video, translated_video_path
+    print('audio.duration', audio.duration)
+    print('video.duration', video.duration)
+
+    # Handle duration mismatch: If audio is longer than video, cut the audio.
+    if audio.duration > video.duration:
+        audio = audio.subclip(0, video.duration)
+    # TODO If video is longer than audio
+
+    # Set the audio of the video to the new audio clip
+    final_video = video.set_audio(audio)
+
+    final_video.write_videofile(str(translated_video_path), fps=30, audio=str(audio_path))
+
+    # TODO use clean FFmpeg
+    # input_video = ffmpeg.input(video_path)
+    # input_audio = ffmpeg.input(audio_path)
+    # ffmpeg.concat(input_video, input_audio, v=1, a=1).output(str(translated_video_path)).run() - Error here
+
+    # Close the clips to free up memory
+    video.close()
+    audio.close()
+    final_video.close()
+
+    print(f'Translated video saved, path: "{translated_video_path}"')
+
+    return translated_video_path
+
+# For local test
+# overlay_audio('0qQ7IMhjgf40Bb6pKftb.mp4', '0qQ7IMhjgf40Bb6pKftb_audio_translated.mp3')

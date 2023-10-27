@@ -33,7 +33,7 @@ updating_project_exception = Exception(
 def update_project_status_and_translated_link_by_id(
     project_id: str,
     status: str,
-    translated_file_link: str | None
+    translated_file_link: str
 ):
     try:
         project_fields_to_update = {

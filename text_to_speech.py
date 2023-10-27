@@ -26,10 +26,13 @@ def text_to_speech(text: str, detected_gender: str, project_id: str):
             model="eleven_multilingual_v2"
         )
 
-        with open('new_audio.mp3', mode='bw') as f:
+        # Create unique filename
+        filename = f"{project_id}_audio_translated.mp3"
+
+        with open(filename, mode='bw') as f:
             f.write(audio)
 
-        return 'new_audio.mp3'
+        return filename
 
     except Exception as e:
         print(f"[text_to_speech] ERROR: {str(e)}")
