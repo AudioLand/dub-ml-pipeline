@@ -12,6 +12,7 @@ import os
 from firebase_admin import storage
 
 from config.config import BUCKET_NAME
+from config.logger import catch_error
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 from integrations.firebase.init_firebase import init_firebase
 
@@ -38,11 +39,10 @@ def download_blob(
         blob = bucket.blob(source_blob_name)
         blob.download_to_filename(destination_file_name)
     except Exception as e:
-        print(f"Error during downloading file: {e}")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translationError",
-            translated_file_link=""
+        catch_error(
+            tag="downloading",
+            error=e,
+            project_id=project_id
         )
         raise download_blob_exception
 
@@ -63,11 +63,10 @@ def upload_blob_and_delete_local_file(
         return public_link
 
     except Exception as e:
-        print(f"Error during uploading file: {e}")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translationError",
-            translated_file_link=""
+        catch_error(
+            tag="uploading",
+            error=e,
+            project_id=project_id
         )
         raise upload_blob_and_delete_local_file_exception
 

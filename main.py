@@ -5,8 +5,10 @@ from datetime import datetime
 
 from fastapi import FastAPI
 
+from config.logger import catch_error
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
+from integrations.stripe.send_usage_record import send_usage_record
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
@@ -25,16 +27,13 @@ app = FastAPI()
 
 
 @app.get("/")
-def generate(project_id: str, target_language: str = None, original_file_location: str = None):
+def generate(
+    project_id: str,
+    target_language: str,
+    original_file_location: str,
+    subscription_item_id: str
+):
     try:
-        # validation for target_language and throw exception
-        if target_language is None:
-            raise Exception('target_language is None')
-
-        # validation for original_file_location and throw exception
-        if original_file_location is None:
-            raise Exception('original_file_location is None')
-
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
         source_blob_name = original_file_location
 
@@ -65,9 +64,9 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
 
         # 2. Convert video to text
         print('start speech to text, video_path - ', local_video_path)
-        text = speech_to_text(
-            video_path=local_video_path,
-            project_id=project_id
+        text, used_minutes_count = speech_to_text(
+            local_video_path,
+            project_id
         )
         print("original text - ", text)
 
@@ -117,14 +116,20 @@ def generate(project_id: str, target_language: str = None, original_file_locatio
         current_time = now.strftime("%H:%M:%S")
         print("Job Done! Current Time =", current_time)
 
+        # 8. Send usage record to Stripe
+        send_usage_record(
+            subscription_item_id=subscription_item_id,
+            used_minutes_count=used_minutes_count,
+            project_id=project_id
+        )
+
         return {"status": "it is working!!!"}
 
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translationError",
-            translated_file_link=""
+        catch_error(
+            tag="main",
+            error=e,
+            project_id=project_id
         )
 
 
