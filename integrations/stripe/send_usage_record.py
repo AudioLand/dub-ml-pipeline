@@ -9,7 +9,9 @@ from config.logger import catch_error
 def send_usage_record(subscription_item_id: str, used_minutes_count: int, project_id: str):
     try:
         SEND_USAGE_RECORD_URL = f"https://api.stripe.com/v1/subscription_items/{subscription_item_id}/usage_records"
-        now_timestamp = datetime.now().timestamp()
+        now_timestamp = int(datetime.now().timestamp())
+
+        print(f"Used minutes count (as timestamp) - {now_timestamp}")
 
         usage_record_data = {
             "quantity": used_minutes_count,
