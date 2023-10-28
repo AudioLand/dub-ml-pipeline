@@ -17,15 +17,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Add flyctl to PATH
-        run: echo "PATH=$HOME/.fly/bin:$PATH" >> $GITHUB_ENV
-
+          
       - name: Install flyctl
-        run: curl -L https://fly.io/install.sh | sh
-
-      - name: Login to fly.io
-        run: flyctl auth token ${{ secrets.FLY_API_TOKEN }} > /dev/null
-
+        uses: superfly/flyctl-actions/setup-flyctl@master
+          
       - name: Deploy to fly.io
-        run: flyctl deploy --wait-timeout 3000
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only
