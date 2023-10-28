@@ -1,7 +1,7 @@
 import logging
 
+from config.config import IS_DEV_ENVIRONMENT
 from config.sentry import sentry_sdk
-from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -10,8 +10,13 @@ logging.basicConfig(
 
 
 def catch_error(tag: str, error: Exception, project_id: str):
+    from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+
     logging.error(msg=f"({tag}): {str(error)}")
-    sentry_sdk.capture_exception(error)
+
+    if not IS_DEV_ENVIRONMENT:
+        sentry_sdk.capture_exception(error)
+
     update_project_status_and_translated_link_by_id(
         project_id=project_id,
         status="translationError",

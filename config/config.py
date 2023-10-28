@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Environment
+IS_DEV_ENVIRONMENT = os.getenv("ENVIRONMENT") == "development"
+
 # APIs
 OPEN_AI_API_KEY = os.getenv("OPEN_AI_API_KEY")
 LABS11_API_KEY = os.getenv("11LABS_API_KEY")

@@ -41,7 +41,8 @@ def text_to_speech(text: str, project_id: str, detected_gender: str = None):
         # If too many requests to 11labs, wait and then try again
         if error.status == "too_many_concurrent_requests":
             time.sleep(DELAY_TO_WAIT_IN_SECONDS)
-            text_to_speech(text, project_id, detected_gender)
+            return text_to_speech(text, project_id, detected_gender)
+        raise text_to_speech_exception
 
     except Exception as e:
         catch_error(
