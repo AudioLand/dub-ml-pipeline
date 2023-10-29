@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 
 ## Deploy to fly.io
-To deploy the app to fly.uo, run this command:
+To deploy the app to fly.io, run this command:
 ```shell
 make deploy
 ```
