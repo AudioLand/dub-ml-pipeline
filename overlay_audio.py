@@ -1,5 +1,6 @@
 import moviepy
 from moviepy.editor import *
+from pydub import AudioSegment
 from pathlib import Path
 
 SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.avi']
@@ -30,11 +31,15 @@ def overlay_audio(video_path, audio_path):
     print('audio.duration', audio.duration)
     print('video.duration', video.duration)
 
-    # Handle duration mismatch: If audio is longer than video, cut the audio.
+    # Handle duration mismatch: If audio is longer than video, speed up the audio.
     if audio.duration > video.duration:
-        audio = audio.subclip(0, video.duration)
-    # TODO If video is longer than audio
+        audio = AudioSegment.from_file(audio_path, format='mp3')
+        speed_ratio = audio.duration_seconds / video.duration
+        modified_audio = audio.speedup(playback_speed=speed_ratio)
+        modified_audio.export(audio_path, format="mp3")
+        audio = AudioFileClip(str(audio_path))
 
+    print('modified_audio.duration', audio.duration)
     # Set the audio of the video to the new audio clip
     final_video = video.set_audio(audio)
 
@@ -54,5 +59,7 @@ def overlay_audio(video_path, audio_path):
 
     return translated_video_path
 
+
 # For local test
 # overlay_audio('0qQ7IMhjgf40Bb6pKftb.mp4', '0qQ7IMhjgf40Bb6pKftb_audio_translated.mp3')
+# overlay_audio('0qQ7IMhjgf40Bb6pKftb.mp4', 'long.mp3')
