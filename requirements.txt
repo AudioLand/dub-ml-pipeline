@@ -9,4 +9,4 @@ pydub
 elevenlabs
 uvicorn
 langchain
-pydantic
+pydantic==1.10.9
