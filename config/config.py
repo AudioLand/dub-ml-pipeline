@@ -1,6 +1,7 @@
 import json
 import os
 
+import openai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,3 +25,6 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
 # Sentry
 SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+# Set OpenAI API key
+openai.api_key = OPEN_AI_API_KEY
