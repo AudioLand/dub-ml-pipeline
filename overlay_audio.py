@@ -1,4 +1,3 @@
-import moviepy
 from moviepy.editor import *
 from pydub import AudioSegment
 from pathlib import Path
