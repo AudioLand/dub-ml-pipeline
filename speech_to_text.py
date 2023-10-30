@@ -28,8 +28,8 @@ def speech_to_text(file_path: str, project_id: str):
         file_format = file.suffix.replace('.', '')  # Strip the dot from the suffix
 
         # Extract Audio from Video
-        audio_content = AudioSegment.from_file(file_path, format=file_format)
-        audio_duration_in_minutes = len(audio_content) // 1000 // 60
+        audio_segment = AudioSegment.from_file(file_path, format=file_format)
+        audio_duration_in_minutes = len(audio_segment) // 1000 // 60
 
         # Determine the 1-minute Mark
         one_minute_in_ms = 1 * 60 * 1000
