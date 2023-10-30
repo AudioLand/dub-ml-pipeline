@@ -86,7 +86,13 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         translated_text_chunks = []
 
         for text in text_chunks:
-            translated_text_chunks.append(translate_text_chunk_with_gpt(language, text))
+            translated_text_chunks.append(
+                translate_text_chunk_with_gpt(
+                    language=language,
+                    text_chunk=text,
+                    project_id=project_id
+                )
+            )
 
         return translated_text_chunks
     except Exception as e:
@@ -110,8 +116,15 @@ def translation_pipeline(language: str, original_text: str, project_id: str):
     - str: Translated text or original text if translation is not possible.
     """
     try:
-        text_chunks = split_text_to_chunks(original_text)
-        translated_text_chunks = translate_text_chunks(language, text_chunks)
+        text_chunks = split_text_to_chunks(
+            original_text=original_text,
+            project_id=project_id
+        )
+        translated_text_chunks = translate_text_chunks(
+            language=language,
+            text_chunks=text_chunks,
+            project_id=project_id
+        )
         final_translated_text = " ".join(translated_text_chunks)
         return final_translated_text
     except Exception as e:
@@ -150,10 +163,12 @@ if __name__ == "__main__":
     Psychic
     jason@psychic.dev
     """
+    print(sample_text)
     target_language = "Russian"
     project_id = "0G8PmZUbaslMcOaAjPJb"
-    translation_pipeline(
+    translated_text = translation_pipeline(
         language=target_language,
         original_text=sample_text,
         project_id=project_id
     )
+    print(translated_text)
