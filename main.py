@@ -74,7 +74,7 @@ def generate(
         print('Translating text ...')
         translated_text = translate_text(
             language=target_language,
-            text=text,
+            original_text=text,
             project_id=project_id
         )
         print("translated_text - ", translated_text)
