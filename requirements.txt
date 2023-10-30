@@ -8,3 +8,5 @@ sentry-sdk
 pydub
 elevenlabs
 uvicorn
+langchain
+pydantic
