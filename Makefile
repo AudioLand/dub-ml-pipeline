@@ -4,5 +4,8 @@ mac/init:
 deploy:
 	flyctl deploy --wait-timeout 3000
 
+install:
+	pip3 install -r requirements.txt
+
 run:
-	python3 main.py
+	uvicorn main:app --host 0.0.0.0 --port 8080 --reload

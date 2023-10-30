@@ -35,7 +35,7 @@ def generate(
     project_id: str,
     target_language: str,
     original_file_location: str,
-    subscription_item_id: str
+    subscription_item_id: str | None = None
 ):
     try:
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
@@ -153,12 +153,13 @@ def generate(
         current_time = now.strftime("%H:%M:%S")
         print("Job Done! Current Time =", current_time)
 
-        # 8. Send usage record to Stripe
-        send_usage_record(
-            subscription_item_id=subscription_item_id,
-            used_minutes_count=used_minutes_count,
-            project_id=project_id
-        )
+        # 8. Send usage record to Stripe for subscribed users
+        if (subscription_item_id != None):
+            send_usage_record(
+                subscription_item_id=subscription_item_id,
+                used_minutes_count=used_minutes_count,
+                project_id=project_id
+            )
 
         return {"status": "it is working!!!"}
 

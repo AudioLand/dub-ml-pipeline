@@ -26,7 +26,6 @@ upload_blob_and_delete_local_file_exception = Exception(
 
 init_firebase()
 
-
 bucket = storage.bucket(name=BUCKET_NAME)
 
 
