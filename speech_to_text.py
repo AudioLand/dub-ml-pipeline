@@ -15,7 +15,6 @@ speech_to_text_exception = Exception(
 
 def speech_to_text(video_path: str, project_id: str):
     """Convert the audio content of a video into text."""
-    openai.api_key = OPEN_AI_API_KEY
     try:
         # Check if the file exists
         if not os.path.exists(video_path):
