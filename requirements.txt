@@ -8,3 +8,6 @@ sentry-sdk
 pydub
 elevenlabs
 uvicorn
+langchain
+pydantic==1.10.9
+moviepy~=1.0.3

@@ -29,11 +29,14 @@ def text_to_speech(text: str, project_id: str, detected_gender: str = None):
             model="eleven_multilingual_v2"
         )
 
-        translated_audio_file_name = f"translated-{project_id}.mp3"
-        with open(translated_audio_file_name, mode='bw') as f:
+
+        # Create unique filename
+        filename = f"{project_id}_audio_translated.mp3"
+
+        with open(filename, mode='bw') as f:
             f.write(audio)
 
-        return translated_audio_file_name
+        return filename
 
     except APIError as error:
         print("[text_to_speech] API Error:", str(error))
