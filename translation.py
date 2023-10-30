@@ -104,7 +104,7 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         raise translate_text_exception
 
 
-def translation_pipeline(language: str, original_text: str, project_id: str):
+def translate_text(language: str, original_text: str, project_id: str):
     """
     Starts the translation pipeline.
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     print(sample_text)
     target_language = "Russian"
     project_id = "0G8PmZUbaslMcOaAjPJb"
-    translated_text = translation_pipeline(
+    translated_text = translate_text(
         language=target_language,
         original_text=sample_text,
         project_id=project_id
