@@ -4,8 +4,7 @@ from elevenlabs import APIError, generate, set_api_key
 
 from config.config import LABS11_API_KEY
 from config.logger import catch_error
-from split_text import split_text
-from split_text import MAX_SYMBOLS_NUMBER
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 set_api_key(LABS11_API_KEY)
 
@@ -24,38 +23,20 @@ DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 def text_to_speech(text: str, project_id: str, detected_gender: str = None):
     try:
         voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
-        translated_audio_file_name = f"translated-{project_id}.mp3"
-
-        if len(text) > MAX_SYMBOLS_NUMBER:
-            chunks = split_text(text)
-            file_mode = 'bw'
-            for chunk in chunks:
-                create_sound(chunk, voice, translated_audio_file_name, file_mode)
-                file_mode = 'ab+'
-        else:
-            create_sound(text, voice, translated_audio_file_name)
-
-        return translated_audio_file_name
-
-    except Exception as e:
-        catch_error(
-            tag="text_to_speech",
-            error=e,
-            project_id=project_id
-        )
-        raise text_to_speech_exception
-
-
-def create_sound(text: str, voice: str, translated_audio_file_name: str, file_mode: str = 'bw'):
-    try:
         audio = generate(
             text=text,
             voice=voice,
             model="eleven_multilingual_v2"
         )
 
-        with open(translated_audio_file_name, mode=file_mode) as f:
+
+        # Create unique filename
+        filename = f"{project_id}_audio_translated.mp3"
+
+        with open(filename, mode='bw') as f:
             f.write(audio)
+
+        return filename
 
     except APIError as error:
         print("[text_to_speech] API Error:", str(error))
@@ -63,5 +44,13 @@ def create_sound(text: str, voice: str, translated_audio_file_name: str, file_mo
         # If too many requests to 11labs, wait and then try again
         if error.status == "too_many_concurrent_requests":
             time.sleep(DELAY_TO_WAIT_IN_SECONDS)
-            create_sound(text, voice, translated_audio_file_name, file_mode)
+            return text_to_speech(text, project_id, detected_gender)
+        raise text_to_speech_exception
+
+    except Exception as e:
+        catch_error(
+            tag="text_to_speech",
+            error=e,
+            project_id=project_id
+        )
         raise text_to_speech_exception
