@@ -1,18 +1,20 @@
 import re
 
+MAX_SYMBOLS_NUMBER = 5000
+
 # Divides a long string into chunks of no more than 5000 characters
 def split_text(text):
-    max_chars = 5000
+    text = text.strip() # 
     result = []
-    text_sentences = re.split('(?<=[.!?])', text)
-    temp = text_sentences[0]
-    for sentence in text_sentences[1:]:
-        if len(temp + sentence) > max_chars:
-            result.append(temp)
-            temp = sentence
+    text_words = re.split('(?<=[.!?])', text)
+    temp = text_words[0]
+    for word in text_words[1:]:
+        if len(temp + word) > MAX_SYMBOLS_NUMBER:
+            result.append(temp.strip())
+            temp = word
         else:
-            temp += f' {sentence}'
-    result.append(temp)
+            temp += f' {word}'
+    result.append(temp.strip())
     return result
 
 if __name__ == "__main__": 
@@ -23,12 +25,15 @@ if __name__ == "__main__":
     Their efforts failed. So, instead, they searched for a variety of banana that the fungus didn’t affect. They found the Cavendish, as it was called, in the greenhouse of a British duke. It wasn’t as well suited to shipping as the Gros Michel, but its bananas tasted good enough to keep consumers happy. Most importantly, TR-1 didn’t seem to affect it. In a few years, United Fruit had saved itself from bankruptcy by filling its plantations with thousands of the new plants, copying the same monoculture growing conditions Gros Michel had thrived in.
     While the operation was a huge success for the Latin American industry, the Cavendish banana itself is far from safe. In 2014, South East Asia, another major banana producer, exported four million tons of Cavendish bananas. But, in 2015, its exports had dropped by 46 per cent thanks to a combination of another strain of the fungus, TR-4, and bad weather.
     Growing practices in South East Asia haven’t helped matters. Growers can’t always afford the expensive lab-based methods to clone plants from shoots without spreading the disease. Also, they often aren’t strict enough about cleaning farm equipment and quarantining infected fields. As a result, the fungus has spread to Australia, the Middle East and Mozambique – and Latin America, heavily dependent on its monoculture Cavendish crops, could easily be next.
-    Racing against the inevitable, scientists are working on solving the problem by genetically modifying the Cavendish with genes from TR-4-resistant banana species. Researchers at the Queensland University of Technology have successfully grown two kinds of modified plant which have remained resistant for three years so far. But some experts think this is just a sophisticated version of the same temporary solution the original Cavendish provided. If the new bananas are planted in the same monocultures as the Cavendish and the Gros Michel before it, the risk is that another strain of the disease may rise up to threaten the modified plants too.
+    Racing against the inevitable, scientists are working on solving the problem by genetically modifying the Cavendish with genes from TR-4-resistant banana species. Researchers at the Queensland University of Technology have successfully grown two kinds of modified plant which have remained resistant for three years so far. But some experts think this is just a sophisticated version of the same temporary solution the original Cavendish provided. If the new bananas are planted in the same monocultures as the Cavendish and the Gros Michel before it, the risk is that another strain of the disease may rise up to threaten the modified plants too. 
+    
     '''
     # text = 'a b c a b c. d e f! g h i? j k l. m n o. p q r. s t u. v w x. y z'
 
     print(len(split_text(text)))
+    i = 1
     for s in split_text(text):
-        print(s)
+        print(i, ':', s)
+        i += 1
         print(len(s))
         print('__________________________________________________________________________________________________________________')
