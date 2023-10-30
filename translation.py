@@ -23,7 +23,7 @@ def split_text_to_chunks(original_text: str, project_id: str):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=4000,
             chunk_overlap=0,
-            separators=[" ", ",", "\n", "."]
+            separators=["\n", ".", ",", " "]
         )
         texts = text_splitter.split_text(original_text)
         return texts
