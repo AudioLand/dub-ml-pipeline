@@ -8,15 +8,15 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from config.logger import catch_error
+from get_file_type_by_suffix import get_file_type_by_suffix
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
-from get_file_type_by_suffix import get_file_type_by_suffix
 from integrations.stripe.send_usage_record import send_usage_record
+from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
 from translation import translate_text
-from overlay_audio import overlay_audio
 
 app = FastAPI()
 
@@ -35,7 +35,6 @@ def generate(
     project_id: str,
     target_language: str,
     original_file_location: str,
-    subscription_item_id: str | None = None
 ):
     try:
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
@@ -152,14 +151,6 @@ def generate(
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("Job Done! Current Time =", current_time)
-
-        # 8. Send usage record to Stripe for subscribed users
-        if (subscription_item_id != None):
-            send_usage_record(
-                subscription_item_id=subscription_item_id,
-                used_minutes_count=used_minutes_count,
-                project_id=project_id
-            )
 
         return {"status": "it is working!!!"}
 
