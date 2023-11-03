@@ -71,7 +71,7 @@ def translate_text_chunk_with_gpt(language: str, text_chunk: str, project_id: st
         raise translate_text_exception
 
 
-def translate_text_chunks(language: str, text_chunks: str, project_id: str):
+def translate_text_chunks(language: str, text_chunks: list[str], project_id: str):
     """
     Passes the given text chunks to the GPT.
 

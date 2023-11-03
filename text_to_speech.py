@@ -1,17 +1,7 @@
-import time
-
-from elevenlabs import APIError, generate, set_api_key
-
-from config.config import LABS11_API_KEY
 from config.logger import catch_error
+from elevenlabs_provider import elevenlabs_provider
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
-
-set_api_key(LABS11_API_KEY)
-
-VOICE_MAPPING = {
-    "female": "Rachel",
-    "male": "Josh"
-}
+from microsoft_provider import microsoft_provider
 
 text_to_speech_exception = Exception(
     "Error while processing text to speech"
@@ -19,33 +9,38 @@ text_to_speech_exception = Exception(
 
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
+ELEVENLABS_LANGUAGES = [
+    "English", "Japanese", "Chinese", "German", "Hindi",
+    "French", "Korean", "Portuguese", "Italian", "Spanish",
+    "Indonesian", "Dutch", "Turkish", "Filipino", "Polish",
+    "Swedish", "Bulgarian", "Romanian", "Arabic", "Czech",
+    "Greek", "Finnish", "Croatian", "Malay", "Slovak",
+    "Danish", "Tamil", "Ukrainian", "Russian"
+]
 
-def text_to_speech(text: str, project_id: str, detected_gender: str = None):
+MICROSOFT_LANGUAGES = []
+
+
+def text_to_speech(text: str, target_language: str, project_id: str, voice_id: str = None, detected_gender: str = None):
     try:
-        voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
-        audio = generate(
-            text=text,
-            voice=voice,
-            model="eleven_multilingual_v2"
-        )
+        if target_language in ELEVENLABS_LANGUAGES:
+            audio = elevenlabs_provider(text=text,
+                                        voice_id=voice_id,
+                                        detected_gender=detected_gender
+                                        )
+        elif target_language in MICROSOFT_LANGUAGES:
+            audio = microsoft_provider(text=text,
+                                       detected_gender=detected_gender
+                                       )
+        else:
+            print('Incorrect language!')
+            # raise Exception('Incorrect language')
 
-
-        # Create unique filename
-        filename = f"{project_id}_audio_translated.mp3"
-
-        with open(filename, mode='bw') as f:
+        translated_audio_file_name = f"translated-{project_id}.mp3"
+        with open(translated_audio_file_name, mode='bw') as f:
             f.write(audio)
 
-        return filename
-
-    except APIError as error:
-        print("[text_to_speech] API Error:", str(error))
-
-        # If too many requests to 11labs, wait and then try again
-        if error.status == "too_many_concurrent_requests":
-            time.sleep(DELAY_TO_WAIT_IN_SECONDS)
-            return text_to_speech(text, project_id, detected_gender)
-        raise text_to_speech_exception
+        return translated_audio_file_name
 
     except Exception as e:
         catch_error(

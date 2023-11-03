@@ -1,18 +1,14 @@
 # Local imports
 # from integrations.youtube_utils import youtube_download
-
 import os
 from datetime import datetime
-from pathlib import Path
 
 from fastapi import FastAPI
 
 from config.logger import catch_error
-from get_file_type_by_suffix import get_file_type_by_suffix
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
 from integrations.stripe.send_usage_record import send_usage_record
-from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
@@ -34,7 +30,9 @@ app = FastAPI()
 def generate(
     project_id: str,
     target_language: str,
+    voice_id: str,
     original_file_location: str,
+    subscription_item_id: str | None = None
 ):
     try:
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
@@ -46,14 +44,9 @@ def generate(
         current_time = now.strftime("%H:%M:%S")
         print("Current Time =", current_time)
 
-        """1. Download video from cloud storage to local storage"""
-
+        # 1. Download video from cloud storage to local storage
         print('Downloading video from cloud storage...')
-
-        # Extract extension from the original file location
-        original_file_extension = Path(original_file_location).suffix
-        # Combine project_id with the extracted extension
-        destination_local_file_name = f"{project_id}{original_file_extension}"
+        destination_local_file_name = project_id + ".mp4"
         download_blob(
             source_blob_name=source_blob_name,
             destination_file_name=destination_local_file_name,
@@ -61,27 +54,24 @@ def generate(
         )
         print('Download completed.')
 
-        local_file_path = destination_local_file_name
+        local_video_path = destination_local_file_name
 
-        """1.1. Change project status to "translating"""
-
+        # 1.1. Change project status to "translating"
         update_project_status_and_translated_link_by_id(
             project_id=project_id,
             status="translating",
             translated_file_link=""
         )
 
-        """2. Convert video to text"""
-
-        print('start speech to text, video_path - ', local_file_path)
+        # 2. Convert video to text
+        print('start speech to text, video_path - ', local_video_path)
         text, used_minutes_count = speech_to_text(
-            local_file_path,
+            local_video_path,
             project_id
         )
         print("original text - ", text)
 
-        """3. Translate text"""
-
+        # 3. Translate text
         print('Translating text ...')
         translated_text = translate_text(
             language=target_language,
@@ -90,45 +80,23 @@ def generate(
         )
         print("translated_text - ", translated_text)
 
-        """4. Detect gender of the voice"""
-
+        # 4. Detect gender of the voice
         # gender = voice_gender_detection(video_path)
 
-        """5. Generate audio from translated text"""
-
+        # 5. Generate audio from translated text
         print('Text to speech started ...')
-
-        # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
             text=translated_text,
+            target_language=target_language,
             project_id=project_id,
+            voice_id=voice_id,
             detected_gender='male',
         )
         print('Audio generation done')
 
-        if get_file_type_by_suffix(local_file_path) == 'video':
-            # Overlay audio on video
-            source_file_name = overlay_audio(local_file_path, translated_audio_local_path)
-        else:
-            source_file_name = translated_audio_local_path
-
-        """6. Upload audio to cloud storage"""
-
-        """
-        Example
-        original_file_location = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
-        original_path = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/
-        original_filename_without_extension = test-video-1min
-        original_file_extension = .mp4
-        """
-
-        # Extract the path and filename from the original_file_location
-        original_path = Path(original_file_location).parent
-        original_filename_without_extension = Path(original_file_location).stem
-        original_file_extension = Path(original_file_location).suffix
-
-        # Create the destination blob name with "_translated" appended to the filename
-        destination_blob_name = f"{original_path}/{original_filename_without_extension}_translated{original_file_extension}"
+        # 6. Upload audio to cloud storage
+        source_file_name = translated_audio_local_path  # имя файла на локальной машине после обработки сеткой
+        destination_blob_name = source_blob_name[:-4] + '-translated.mp3'  # выгружаем обратно с заменённым окончанием
 
         print('Uploading video from cloud storage...')
         file_public_link = upload_blob_and_delete_local_file(
@@ -140,8 +108,7 @@ def generate(
 
         os.remove(destination_local_file_name)
 
-        """7. Change project status to "translated"""
-
+        # 7. Change project status to "translated"
         update_project_status_and_translated_link_by_id(
             project_id=project_id,
             status="translated",
@@ -151,6 +118,14 @@ def generate(
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("Job Done! Current Time =", current_time)
+
+        # 8. Send usage record to Stripe for subscribed users
+        if subscription_item_id is not None:
+            send_usage_record(
+                subscription_item_id=subscription_item_id,
+                used_minutes_count=used_minutes_count,
+                project_id=project_id
+            )
 
         return {"status": "it is working!!!"}
 
@@ -172,5 +147,6 @@ if __name__ == "__main__":
     # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
     # project_id = "8yFG22MbYelc0SwxELxf"
     # target_language = "Russian"
+    # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
     # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, original_file_location)
+    # generate(project_id, target_language, voice_id, original_file_location)
