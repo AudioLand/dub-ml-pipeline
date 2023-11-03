@@ -9,8 +9,8 @@ from integrations.firebase.firestore_update_project import update_project_status
 set_api_key(LABS11_API_KEY)
 
 VOICE_MAPPING = {
-    "female": "Rachel",
-    "male": "Josh"
+    "female": '21m00Tcm4TlvDq8ikWAM',
+    "male": 'TxGEqnHWrfWFTfGW9XjX'
 }
 
 ELEVENLABS_VOICES_ID = list(map(lambda voice: voice.voice_id, voices()))
@@ -25,7 +25,7 @@ DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 def text_to_speech(text: str, project_id: str, voice_id: str = None, detected_gender: str = None):
     try:
         if voice_id is None or voice_id not in ELEVENLABS_VOICES_ID:
-            voice_id = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
+            voice_id = VOICE_MAPPING.get(detected_gender, 'TxGEqnHWrfWFTfGW9XjX')  # Default to "Josh" if gender is not recognized
         audio = generate(
             text=text,
             voice=voice_id,
