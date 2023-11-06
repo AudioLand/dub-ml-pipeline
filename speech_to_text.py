@@ -4,8 +4,9 @@ import tempfile
 import openai
 from pydub import AudioSegment
 from pathlib import Path
+import requests
 
-from config.config import OPEN_AI_API_KEY
+from config.config import ENDPOINT_WHISPER_API_URL
 from config.logger import catch_error
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
@@ -13,7 +14,20 @@ speech_to_text_exception = Exception(
     "Error while processing speech to text"
 )
 
+headers = {
+    "Authorization": "Bearer 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",
+    "Content-Type": "audio/m4a"
+}
+
 MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
+
+
+def query(filename):
+    with open(filename, "rb") as f:
+        data = f.read()
+    response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
+    return response.json()
+
 
 def speech_to_text(file_path: str, project_id: str):
     """Convert the audio content of a video or audio into text."""
@@ -36,6 +50,8 @@ def speech_to_text(file_path: str, project_id: str):
         transcript_parts = []
 
         # Loop Through 10-minute Segments
+        elapsed_time = 0  # in milliseconds
+
         for start_time in range(0, len(audio_segment), one_minute_in_ms):
             end_time = min(len(audio_segment), start_time + one_minute_in_ms)
             current_segment = audio_segment[start_time:end_time]
@@ -49,11 +65,20 @@ def speech_to_text(file_path: str, project_id: str):
                 current_segment.export(temp_file.name, format="wav")
 
                 # Use OpenAI's Whisper ASR to transcribe
-                with open(temp_file.name, "rb") as audio_file:
-                    transcript_parts.append(openai.Audio.translate("whisper-1", audio_file)['text'])
+                output = query(temp_file.name)
+
+                # Adjust the timestamps by adding the elapsed_time
+                for chunk in output['chunks']:
+                    chunk['timestamp'][0] += elapsed_time / 1000  # convert milliseconds to seconds
+                    chunk['timestamp'][1] += elapsed_time / 1000  # convert milliseconds to seconds
+
+                transcript_parts += output['chunks']
+
+            # Update the elapsed_time
+            elapsed_time += one_minute_in_ms
 
         # Concatenate and Return the Transcription
-        return ' '.join(transcript_parts), audio_duration_in_seconds
+        return transcript_parts, audio_duration_in_seconds
 
     except ValueError as ve:
         catch_error(
