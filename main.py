@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from config.logger import catch_error
 from get_file_type_by_suffix import get_file_type_by_suffix
 from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+from integrations.firebase.firestore_update_user_tokens import update_user_tokens
 from integrations.firebase.google_cloud_storage import download_blob, upload_blob_and_delete_local_file
-from integrations.stripe.send_usage_record import send_usage_record
 from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
@@ -19,6 +19,7 @@ from text_to_speech import text_to_speech
 from translation import translate_text
 
 app = FastAPI()
+
 
 # youtube_link = "https://youtu.be/WDv4AWk0J3U?si=wL3cKW1PCvinxBDy"
 # video_path = 'test-video-1min.mp4'
@@ -35,6 +36,7 @@ def generate(
     project_id: str,
     target_language: str,
     original_file_location: str,
+    organization_id: str,
 ):
     try:
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
@@ -74,7 +76,7 @@ def generate(
         """2. Convert video to text"""
 
         print('start speech to text, video_path - ', local_file_path)
-        text, used_minutes_count = speech_to_text(
+        text, used_seconds_count = speech_to_text(
             local_file_path,
             project_id
         )
@@ -151,6 +153,12 @@ def generate(
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         print("Job Done! Current Time =", current_time)
+
+        update_user_tokens(
+            organization_id=organization_id,
+            tokens_in_seconds=used_seconds_count,
+            project_id=project_id,
+        )
 
         return {"status": "it is working!!!"}
 
