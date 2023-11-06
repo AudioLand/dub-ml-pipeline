@@ -83,12 +83,12 @@ def generate(
         """3. Translate text"""
 
         print('Translating text ...')
-        translated_text = translate_text(
+        translate_text(
             language=target_language,
-            original_text=text,
+            text_segments=text,
             project_id=project_id
         )
-        print("translated_text - ", translated_text)
+        print("translated_text - ", text)
 
         """4. Detect gender of the voice"""
 
@@ -100,7 +100,7 @@ def generate(
 
         # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
-            text=translated_text,
+            text_segments=text,
             project_id=project_id,
             detected_gender='male',
         )
@@ -108,8 +108,9 @@ def generate(
 
         if get_file_type_by_suffix(local_file_path) == 'video':
             # Overlay audio on video
-            source_file_name = overlay_audio(local_file_path, translated_audio_local_path)
+            source_file_name = overlay_audio(local_file_path, translated_audio_local_path, text)
         else:
+            # TODO: create overlay for audio too.
             source_file_name = translated_audio_local_path
 
         """6. Upload audio to cloud storage"""
@@ -169,8 +170,9 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
-    # project_id = "8yFG22MbYelc0SwxELxf"
-    # target_language = "Russian"
-    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, original_file_location)
+    #user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
+    #project_id = "8yFG22MbYelc0SwxELxf"
+    #target_language = "Russian"
+    #target_language = "English"
+    #original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    #generate(project_id, target_language, original_file_location)
