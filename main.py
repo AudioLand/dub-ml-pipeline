@@ -35,6 +35,7 @@ app = FastAPI()
 def generate(
     project_id: str,
     target_language: str,
+    voice_id: str,
     original_file_location: str,
     organization_id: str,
 ):
@@ -104,6 +105,7 @@ def generate(
         translated_audio_local_path = text_to_speech(
             text=translated_text,
             project_id=project_id,
+            voice_id=voice_id,
             detected_gender='male',
         )
         print('Audio generation done')
@@ -180,5 +182,6 @@ if __name__ == "__main__":
     # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
     # project_id = "8yFG22MbYelc0SwxELxf"
     # target_language = "Russian"
+    # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
     # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, original_file_location)
+    # generate(project_id, target_language, voice_id, original_file_location)

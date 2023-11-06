@@ -1,6 +1,6 @@
 import time
 
-from elevenlabs import APIError, generate, set_api_key
+from elevenlabs import APIError, generate, set_api_key, voices
 
 from config.config import LABS11_API_KEY
 from config.logger import catch_error
@@ -13,6 +13,8 @@ VOICE_MAPPING = {
     "male": "Josh"
 }
 
+ELEVENLABS_VOICES_ID = list(map(lambda voice: voice.voice_id, voices()))
+
 text_to_speech_exception = Exception(
     "Error while processing text to speech"
 )
@@ -20,23 +22,21 @@ text_to_speech_exception = Exception(
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
 
-def text_to_speech(text: str, project_id: str, detected_gender: str = None):
+def text_to_speech(text: str, project_id: str, voice_id: str = None, detected_gender: str = None):
     try:
-        voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
+        if voice_id is None or voice_id not in ELEVENLABS_VOICES_ID:
+            voice_id = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
         audio = generate(
             text=text,
-            voice=voice,
+            voice=voice_id,
             model="eleven_multilingual_v2"
         )
 
-
-        # Create unique filename
-        filename = f"{project_id}_audio_translated.mp3"
-
-        with open(filename, mode='bw') as f:
+        translated_audio_file_name = f"translated-{project_id}.mp3"
+        with open(translated_audio_file_name, mode='bw') as f:
             f.write(audio)
 
-        return filename
+        return translated_audio_file_name
 
     except APIError as error:
         print("[text_to_speech] API Error:", str(error))
