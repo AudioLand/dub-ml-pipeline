@@ -27,7 +27,7 @@ def speech_to_text(file_path: str, project_id: str):
 
         # Extract Audio from Video
         audio_segment = AudioSegment.from_file(file_path, format=file_format)
-        audio_duration_in_minutes = len(audio_segment) // 1000 // 60
+        audio_duration_in_seconds = len(audio_segment) // 1000
 
         # Determine the 1-minute Mark
         one_minute_in_ms = 1 * 60 * 1000
@@ -53,7 +53,7 @@ def speech_to_text(file_path: str, project_id: str):
                     transcript_parts.append(openai.Audio.translate("whisper-1", audio_file)['text'])
 
         # Concatenate and Return the Transcription
-        return ' '.join(transcript_parts), audio_duration_in_minutes
+        return ' '.join(transcript_parts), audio_duration_in_seconds
 
     except ValueError as ve:
         catch_error(
