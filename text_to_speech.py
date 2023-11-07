@@ -33,8 +33,13 @@ def text_to_speech(text: str, target_language: str, project_id: str, voice_id: s
                                        detected_gender=detected_gender
                                        )
         else:
-            print('Incorrect language!')
-            # raise Exception('Incorrect language')
+            # TODO: raise Exception вызывает бесконечный цикл
+            catch_error(
+                tag="text_to_speech",
+                error=Exception('Incorrect language'),
+                project_id=project_id
+            )
+            return
 
         translated_audio_file_name = f"translated-{project_id}.mp3"
         with open(translated_audio_file_name, mode='bw') as f:
