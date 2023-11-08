@@ -30,7 +30,6 @@ def text_to_speech(text_segments: str, project_id: str, voice_id: str = None, de
     try:
         if voice_id is None or voice_id not in ELEVENLABS_VOICES_ID:
             voice_id = VOICE_MAPPING.get(detected_gender, 'TxGEqnHWrfWFTfGW9XjX')  # Default to "Josh" if gender is not recognized
-        voice = VOICE_MAPPING.get(detected_gender, "Josh")  # Default to "Josh" if gender is not recognized
         translated_audio_file_name = f"translated-{project_id}.mp3"
 
         open(translated_audio_file_name, mode='w').close()
@@ -44,9 +43,9 @@ def text_to_speech(text_segments: str, project_id: str, voice_id: str = None, de
             if len(text) > MAX_SYMBOLS_NUMBER:
                 chunks = split_text(text)
                 for chunk in chunks:
-                    create_sound(chunk, voice, translated_audio_file_name)
+                    create_sound(chunk, voice_id, translated_audio_file_name)
             else:
-                create_sound(text, voice, translated_audio_file_name)
+                create_sound(text, voice_id, translated_audio_file_name)
 
             # Recording end moment in the audio for the segment.
             prev_moment = AudioFileClip(str(translated_audio_file_name)).duration
