@@ -4,6 +4,7 @@ from elevenlabs import generate, set_api_key
 from elevenlabs import APIError, generate, set_api_key
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from elevenlabs import APIError, generate, set_api_key, voices
+from moviepy.audio.io.AudioFileClip import AudioFileClip
 
 from config.config import LABS11_API_KEY
 from config.logger import catch_error
