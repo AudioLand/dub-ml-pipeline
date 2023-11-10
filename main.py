@@ -180,9 +180,9 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
-    project_id = "8yFG22MbYelc0SwxELxf"
-    target_language = "Russian"
-    voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
-    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    generate(project_id, target_language, voice_id, original_file_location, "")
+    # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
+    # project_id = "8yFG22MbYelc0SwxELxf"
+    # target_language = "Russian"
+    # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
+    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    # generate(project_id, target_language, voice_id, original_file_location, "")
