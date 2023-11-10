@@ -104,16 +104,17 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         raise translate_text_exception
 
 
-def translate_text(language: str, original_text: str, project_id: str):
+def translate_text_segment(language: str, original_text: str, project_id: str):
     """
-    Starts the translation pipeline.
+    Translates a given text segment into the specified language.
 
     Parameters:
     - language (str): The target language for translation.
-    - text (str): The text to be translated.
+    - original_text (str): The text segment to be translated.
+    - project_id (str): The ID for the project.
 
     Returns:
-    - str: Translated text or original text if translation is not possible.
+    - str: Translated text segment or original text segment if translation is not possible.
     """
     try:
         text_chunks = split_text_to_chunks(
@@ -134,6 +135,21 @@ def translate_text(language: str, original_text: str, project_id: str):
             project_id=project_id
         )
         raise translate_text_exception
+
+
+def translate_text(language: str, text_segments: list, project_id: str):
+    """
+    Translates a list of text chunks.
+
+    Parameters:
+    - language (str): The target language for translation.
+    - text_segments (list): The list of text chunks to be translated.
+    - project_id (str): The ID for the project.
+
+    This function updates the text of each chunk in the list with its translation.
+    """
+    for chunk in text_segments:
+        chunk['text'] = translate_text_segment(language, chunk['text'], project_id)
 
 
 if __name__ == "__main__":
@@ -166,9 +182,13 @@ if __name__ == "__main__":
     print(sample_text)
     target_language = "Russian"
     project_id = "0G8PmZUbaslMcOaAjPJb"
-    translated_text = translate_text(
+    segments = [{"text": segment.strip()} for segment in sample_text.split('\n\n') if segment.strip()]
+    translate_text(
         language=target_language,
-        original_text=sample_text,
+        text_segments=segments,
         project_id=project_id
     )
-    print(translated_text)
+    print(f'Segments variable: {segments}')
+
+    translated_text = "\n\n".join([segment["text"] for segment in segments])
+    print("\nTranslated Text:\n", translated_text)
