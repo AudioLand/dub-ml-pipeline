@@ -16,7 +16,7 @@ from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
-from translation import translate_text
+from translation import translate_text, convert_original_text_to_special_format
 
 app = FastAPI()
 
@@ -81,17 +81,20 @@ def generate(
             local_file_path,
             project_id
         )
+        original_text_timestamp_dictionary = text
         print("original text - ", text)
 
         """3. Translate text"""
+        text = convert_original_text_to_special_format(text)
 
         print('Translating text ...')
-        translate_text(
+        translated_text = translate_text(
+            original_dictionary = original_text_timestamp_dictionary,
             language=target_language,
-            text_segments=text,
+            original_text=text,
             project_id=project_id
         )
-        print("translated_text - ", text)
+        print("translated_text - ", translated_text)
 
         """4. Detect gender of the voice"""
 
@@ -103,7 +106,7 @@ def generate(
 
         # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
-            text_segments=text,
+            text_segments=translated_text,
             project_id=project_id,
             voice_id=voice_id,
             detected_gender='male',
@@ -180,9 +183,9 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
-    # project_id = "8yFG22MbYelc0SwxELxf"
-    # target_language = "Russian"
-    # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
-    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, voice_id, original_file_location)
+    user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
+    project_id = "8yFG22MbYelc0SwxELxf"
+    target_language = "Russian"
+    voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
+    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    generate(project_id, target_language, voice_id, original_file_location, "")
