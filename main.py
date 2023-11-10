@@ -16,7 +16,7 @@ from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
-from translation import translate_text, convert_original_text_to_special_format
+from translation import translate_text
 
 app = FastAPI()
 
@@ -81,17 +81,14 @@ def generate(
             local_file_path,
             project_id
         )
-        original_text_timestamp_dictionary = text
         print("original text - ", text)
 
         """3. Translate text"""
-        text = convert_original_text_to_special_format(text)
 
         print('Translating text ...')
         translated_text = translate_text(
-            original_dictionary = original_text_timestamp_dictionary,
             language=target_language,
-            original_text=text,
+            original_dictionary=text,
             project_id=project_id
         )
         print("translated_text - ", translated_text)

@@ -16,6 +16,8 @@ def convert_original_text_to_special_format(original_dictionary: list):
 
     Parameters:
         - original_dictionary (list) - the list of dictionaries with text segments and timestamps.
+    Returns:
+    - str: .The string, where all text segments are divided by ] symbol.
     """
 
     original_text_in_format = ""
@@ -118,19 +120,19 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         )
         raise translate_text_exception
 
-def translate_text(original_dictionary: list, language: str, original_text: str, project_id: str):
+def translate_text(language: str, original_dictionary: list, project_id: str):
     """
     Translates a given text segment into the specified language.
 
     Parameters:
-    - original_dictionary (list): the list of dictionaries with original text segments and timestamps
     - language (str): The target language for translation.
-    - original_text (str): The text segment to be translated.
+    - original_dictionary (list): The list of dictionaries with original text segments and timestamps.
     - project_id (str): The ID for the project.
 
     Returns:
-    - str: Translated text segment or original text segment if translation is not possible.
+    - list: The list of dictionaries with translated text segments and timestamps.
     """
+    original_text = convert_original_text_to_special_format(original_dictionary)
     try:
         text_chunks = split_text_to_chunks(
             original_text=original_text,
@@ -160,19 +162,18 @@ def translate_text(original_dictionary: list, language: str, original_text: str,
 
 if __name__ == "__main__":
     original_dictionary = [{'timestamp': [0.0, 4.5], 'text': ' The next generation of Rayban meta smart glasses.'}, {'timestamp': [4.5, 14.52], 'text': ' These are the first smart glasses that are built in shipping with meta AI in them.'}, {'timestamp': [14.52, 23.5], 'text': " Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go."}, {'timestamp': [23.5, 26.0], 'text': " We're going to be issuing a free software update"}, {'timestamp': [26.0, 27.8], 'text': ' to the glasses that makes them multimodal.'}]
-    sample_text = "] The next generation of Rayban meta smart glasses.]\n\
-                   ] These are the first smart glasses that are built in shipping with meta AI in them.]\n\
-                   ] Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go.]\n\
-                   ] We're going to be issuing a free software update]\n\
-                   ] to the glasses that makes them multimodal.]"
+    # sample_text = "] The next generation of Rayban meta smart glasses.]\n\
+    #                ] These are the first smart glasses that are built in shipping with meta AI in them.]\n\
+    #                ] Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go.]\n\
+    #                ] We're going to be issuing a free software update]\n\
+    #                ] to the glasses that makes them multimodal.]"
 
     target_language = "Russian"
     project_id = "0G8PmZUbaslMcOaAjPJb"
     print("\nOriginal text segments:\n", original_dictionary)
     translated_text = translate_text(
-        original_dictionary=original_dictionary,
         language=target_language,
-        original_text=sample_text,
+        original_dictionary=original_dictionary,
         project_id=project_id
     )
 
