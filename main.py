@@ -91,7 +91,7 @@ def generate(
             original_dictionary=text,
             project_id=project_id
         )
-        print("translated_text - ", translated_text)
+        print("translated_text - ", text)
 
         """4. Detect gender of the voice"""
 
