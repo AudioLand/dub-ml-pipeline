@@ -18,7 +18,8 @@ ELEVENLABS_LANGUAGES = [
     "Danish", "Tamil", "Ukrainian", "Russian"
 ]
 
-MICROSOFT_LANGUAGES = []
+with open('languages_microsoft.txt', 'r') as f:
+    MICROSOFT_LANGUAGES = f.read().split(',\n')
 
 
 def text_to_speech(text: str, target_language: str, project_id: str, voice_id: str = None, detected_gender: str = None):
@@ -30,6 +31,7 @@ def text_to_speech(text: str, target_language: str, project_id: str, voice_id: s
                                         )
         elif target_language in MICROSOFT_LANGUAGES:
             audio = microsoft_provider(text=text,
+                                       language=target_language,
                                        detected_gender=detected_gender
                                        )
         else:
