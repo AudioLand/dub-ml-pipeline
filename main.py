@@ -64,7 +64,7 @@ def generate(
         # )
         print('Download completed.')
 
-        local_file_path = '/Users/lizashcherbakova/work/notion/files/en_short_2_speakers.mp4'
+        local_file_path = destination_local_file_name
 
         """1.1. Change project status to "translating"""
         #
@@ -86,12 +86,12 @@ def generate(
         """3. Translate text"""
 
         print('Translating text ...')
-        translate_text(
+        translated_text = translate_text(
             language=target_language,
-            text_segments=text,
+            original_dictionary=text,
             project_id=project_id
         )
-        print("translated_text - ", text)
+        print("translated_text - ", translated_text)
 
         """4. Detect gender of the voice"""
 
@@ -103,7 +103,7 @@ def generate(
 
         # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
-            text_segments=text,
+            text_segments=translated_text,
             project_id=project_id,
             voice_id=voice_id,
             detected_gender='male',

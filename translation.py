@@ -3,10 +3,27 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from config.logger import catch_error
 
+import re
+
 translate_text_exception = Exception(
     "Error while translating text"
 )
 
+def convert_original_text_to_special_format(original_dictionary: list):
+
+    """
+    Transforms the given dictionary of timestamps and texts to the string, where segments are divided by ] symbol.
+
+    Parameters:
+        - original_dictionary (list) - the list of dictionaries with text segments and timestamps.
+    Returns:
+    - str: .The string, where all text segments are divided by ] symbol.
+    """
+
+    original_text_in_format = ""
+    for text_and_timestamp in original_dictionary:
+        original_text_in_format = "".join([original_text_in_format, f"]{text_and_timestamp['text']}]\n"])
+    return original_text_in_format
 
 def split_text_to_chunks(original_text: str, project_id: str):
     """
@@ -23,7 +40,7 @@ def split_text_to_chunks(original_text: str, project_id: str):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=4000,
             chunk_overlap=0,
-            separators=["\n", ".", ",", " "]
+            separators=["\n"]
         )
         texts = text_splitter.split_text(original_text)
         return texts
@@ -51,7 +68,7 @@ def translate_text_chunk_with_gpt(language: str, text_chunk: str, project_id: st
     prompt = (f"Translate the below text in {language}. Text: {text_chunk} "
               f"If the text is already in {language}, just write this text in the answer without translation. "
               f"If you are not able to translate this text, also write this text in the answer without translation. "
-              f"Start your answer with the translated text. Your answer:")
+              f"Start your answer with the translated text. Remain all ] and [ symbols from the original text. Your answer:")
 
     try:
         response = openai.ChatCompletion.create(
@@ -103,19 +120,19 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         )
         raise translate_text_exception
 
-
-def translate_text_segment(language: str, original_text: str, project_id: str):
+def translate_text(language: str, original_dictionary: list, project_id: str):
     """
     Translates a given text segment into the specified language.
 
     Parameters:
     - language (str): The target language for translation.
-    - original_text (str): The text segment to be translated.
+    - original_dictionary (list): The list of dictionaries with original text segments and timestamps.
     - project_id (str): The ID for the project.
 
     Returns:
-    - str: Translated text segment or original text segment if translation is not possible.
+    - list: The list of dictionaries with translated text segments and timestamps.
     """
+    original_text = convert_original_text_to_special_format(original_dictionary)
     try:
         text_chunks = split_text_to_chunks(
             original_text=original_text,
@@ -126,8 +143,14 @@ def translate_text_segment(language: str, original_text: str, project_id: str):
             text_chunks=text_chunks,
             project_id=project_id
         )
-        final_translated_text = " ".join(translated_text_chunks)
-        return final_translated_text
+        final_translated_text = "".join(translated_text_chunks)
+        translated_text_segments = re.split(r"]\n", final_translated_text)
+
+        for segment_number in range(len(translated_text_segments)):
+            translated_segment = translated_text_segments[segment_number]
+            original_dictionary[segment_number]['text'] = translated_segment[1: len(translated_segment)]
+
+        return original_dictionary
     except Exception as e:
         catch_error(
             tag="translation_pipeline",
@@ -137,58 +160,21 @@ def translate_text_segment(language: str, original_text: str, project_id: str):
         raise translate_text_exception
 
 
-def translate_text(language: str, text_segments: list, project_id: str):
-    """
-    Translates a list of text chunks.
-
-    Parameters:
-    - language (str): The target language for translation.
-    - text_segments (list): The list of text chunks to be translated.
-    - project_id (str): The ID for the project.
-
-    This function updates the text of each chunk in the list with its translation.
-    """
-    for chunk in text_segments:
-        chunk['text'] = translate_text_segment(language, chunk['text'], project_id)
-
-
 if __name__ == "__main__":
-    sample_text = """[Generated with ChatGPT]
-    Confidential Document - For Internal Use Only
+    original_dictionary = [{'timestamp': [0.0, 4.5], 'text': ' The next generation of Rayban meta smart glasses.'}, {'timestamp': [4.5, 14.52], 'text': ' These are the first smart glasses that are built in shipping with meta AI in them.'}, {'timestamp': [14.52, 23.5], 'text': " Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go."}, {'timestamp': [23.5, 26.0], 'text': " We're going to be issuing a free software update"}, {'timestamp': [26.0, 27.8], 'text': ' to the glasses that makes them multimodal.'}]
+    # sample_text = "] The next generation of Rayban meta smart glasses.]\n\
+    #                ] These are the first smart glasses that are built in shipping with meta AI in them.]\n\
+    #                ] Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go.]\n\
+    #                ] We're going to be issuing a free software update]\n\
+    #                ] to the glasses that makes them multimodal.]"
 
-    Date: July 1, 2023
-
-    Subject: Updates and Discussions on Various Topics
-
-    Dear Team,
-    I hope this email finds you well. In this document, I would like to provide you with some important updates and discuss various topics that require our attention. Please treat the information contained herein as highly confidential.
-    Security and Privacy Measures
-    As part of our ongoing commitment to ensure the security and privacy of our customers' data, we have implemented robust measures across all our systems. We would like to commend John Doe (email: john.doe@example.com) from the IT department for his diligent work in enhancing our network security. Moving forward, we kindly remind everyone to strictly adhere to our data protection policies and guidelines. Additionally, if you come across any potential security risks or incidents, please report them immediately to our dedicated team at security@example.com.
-    HR Updates and Employee Benefits
-    Recently, we welcomed several new team members who have made significant contributions to their respective departments. I would like to recognize Jane Smith (SSN: 049-45-5928) for her outstanding performance in customer service. Jane has consistently received positive feedback from our clients. Furthermore, please remember that the open enrollment period for our employee benefits program is fast approaching. Should you have any questions or require assistance, please contact our HR representative, Michael Johnson (phone: 418-492-3850, email: michael.johnson@example.com).
-    Marketing Initiatives and Campaigns
-    Our marketing team has been actively working on developing new strategies to increase brand awareness and drive customer engagement. We would like to thank Sarah Thompson (phone: 415-555-1234) for her exceptional efforts in managing our social media platforms. Sarah has successfully increased our follower base by 20% in the past month alone. Moreover, please mark your calendars for the upcoming product launch event on July 15th. We encourage all team members to attend and support this exciting milestone for our company.
-    Research and Development Projects
-    In our pursuit of innovation, our research and development department has been working tirelessly on various projects. I would like to acknowledge the exceptional work of David Rodriguez (email: david.rodriguez@example.com) in his role as project lead. David's contributions to the development of our cutting-edge technology have been instrumental. Furthermore, we would like to remind everyone to share their ideas and suggestions for potential new projects during our monthly R&D brainstorming session, scheduled for July 10th.
-    Please treat the information in this document with utmost confidentiality and ensure that it is not shared with unauthorized individuals. If you have any questions or concerns regarding the topics discussed, please do not hesitate to reach out to me directly.
-    Thank you for your attention, and let's continue to work together to achieve our goals.
-    Best regards,
-
-    Jason Fan
-    Cofounder & CEO
-    Psychic
-    jason@psychic.dev
-    """
-    print(sample_text)
     target_language = "Russian"
     project_id = "0G8PmZUbaslMcOaAjPJb"
-    segments = [{"text": segment.strip()} for segment in sample_text.split('\n\n') if segment.strip()]
-    translate_text(
+    print("\nOriginal text segments:\n", original_dictionary)
+    translated_text = translate_text(
         language=target_language,
-        text_segments=segments,
+        original_dictionary=original_dictionary,
         project_id=project_id
     )
-    print(f'Segments variable: {segments}')
 
-    translated_text = "\n\n".join([segment["text"] for segment in segments])
-    print("\nTranslated Text:\n", translated_text)
+    print("\nTranslated text segments:\n", translated_text)
