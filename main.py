@@ -57,22 +57,22 @@ def generate(
         original_file_extension = Path(original_file_location).suffix
         # Combine project_id with the extracted extension
         destination_local_file_name = f"{project_id}{original_file_extension}"
-        download_blob(
-            source_blob_name=source_blob_name,
-            destination_file_name=destination_local_file_name,
-            project_id=project_id
-        )
+        # download_blob(
+        #     source_blob_name=source_blob_name,
+        #     destination_file_name=destination_local_file_name,
+        #     project_id=project_id
+        # )
         print('Download completed.')
 
-        local_file_path = destination_local_file_name
+        local_file_path = '/Users/lizashcherbakova/work/notion/files/en_short_2_speakers.mp4'
 
         """1.1. Change project status to "translating"""
-
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translating",
-            translated_file_link=""
-        )
+        #
+        # update_project_status_and_translated_link_by_id(
+        #     project_id=project_id,
+        #     status="translating",
+        #     translated_file_link=""
+        # )
 
         """2. Convert video to text"""
 
@@ -117,6 +117,7 @@ def generate(
             # TODO: create overlay for audio too.
             source_file_name = translated_audio_local_path
 
+        return
         """6. Upload audio to cloud storage"""
 
         """
@@ -180,9 +181,9 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    # user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
-    # project_id = "8yFG22MbYelc0SwxELxf"
-    # target_language = "Russian"
-    # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
-    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, voice_id, original_file_location)
+    user_id = "UZD72svk8tVRXE5PlqxmpA36VIt1"
+    project_id = "8yFG22MbYelc0SwxELxf"
+    target_language = "Russian"
+    voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
+    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    generate(project_id, target_language, voice_id, original_file_location, '')
