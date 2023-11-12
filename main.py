@@ -65,6 +65,9 @@ def generate(
         print('Download completed.')
 
         local_file_path = destination_local_file_name
+        local_file_path = "/Users/lizashcherbakova/work/notion/files/en_longer_minute.mp4"
+        #local_file_path = "/Users/lizashcherbakova/work/notion/files/en_short_2_speakers.mp4"
+
 
         """1.1. Change project status to "translating"""
         #
@@ -104,15 +107,16 @@ def generate(
         # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
             text_segments=translated_text,
+            target_language=target_language,
             project_id=project_id,
             voice_id=voice_id,
             detected_gender='male',
         )
-        print('Audio generation done')
+        print('Audio generation done', translated_text)
 
         if get_file_type_by_suffix(local_file_path) == 'video':
             # Overlay audio on video
-            source_file_name = overlay_audio(local_file_path, translated_audio_local_path, text)
+            source_file_name = overlay_audio(local_file_path, translated_audio_local_path, text, True)
         else:
             # TODO: create overlay for audio too.
             source_file_name = translated_audio_local_path

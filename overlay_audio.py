@@ -36,12 +36,15 @@ def overlay_audio(video_path, audio_path, segments, show_segment_logs=False):
         if show_segment_logs:
             print(f"Processing segment {segment}...")
 
+        if 'audio_timestamp' not in segment:
+            print("! Missing translation sound for", segment)
+            continue
+
         audio_start_time, audio_end_time = segment['audio_timestamp']
-        audio_segment = AudioSegment.from_file(str(audio_path), format='mp3')[
-                        audio_start_time * 1000:audio_end_time * 1000]
+        audio_segment = AudioSegment.from_file(audio_path)[audio_start_time:audio_end_time]
 
         video_start_time, video_end_time = segment['timestamp']
-        video_duration = video_end_time - video_start_time
+        video_duration = (video_end_time - video_start_time) * 1000
         audio_duration = audio_end_time - audio_start_time
         if show_segment_logs:
             print(f"Original Video Duration: {video_duration:.2f}s, Audio Duration: {audio_duration:.2f}s")

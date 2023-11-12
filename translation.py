@@ -9,8 +9,8 @@ translate_text_exception = Exception(
     "Error while translating text"
 )
 
-def convert_original_text_to_special_format(original_dictionary: list):
 
+def convert_original_text_to_special_format(original_dictionary: list):
     """
     Transforms the given dictionary of timestamps and texts to the string, where segments are divided by ] symbol.
 
@@ -24,6 +24,7 @@ def convert_original_text_to_special_format(original_dictionary: list):
     for text_and_timestamp in original_dictionary:
         original_text_in_format = "".join([original_text_in_format, f"]{text_and_timestamp['text']}]\n"])
     return original_text_in_format
+
 
 def split_text_to_chunks(original_text: str, project_id: str):
     """
@@ -120,6 +121,7 @@ def translate_text_chunks(language: str, text_chunks: str, project_id: str):
         )
         raise translate_text_exception
 
+
 def translate_text(language: str, original_dictionary: list, project_id: str):
     """
     Translates a given text segment into the specified language.
@@ -161,7 +163,13 @@ def translate_text(language: str, original_dictionary: list, project_id: str):
 
 
 if __name__ == "__main__":
-    original_dictionary = [{'timestamp': [0.0, 4.5], 'text': ' The next generation of Rayban meta smart glasses.'}, {'timestamp': [4.5, 14.52], 'text': ' These are the first smart glasses that are built in shipping with meta AI in them.'}, {'timestamp': [14.52, 23.5], 'text': " Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go."}, {'timestamp': [23.5, 26.0], 'text': " We're going to be issuing a free software update"}, {'timestamp': [26.0, 27.8], 'text': ' to the glasses that makes them multimodal.'}]
+    original_dictionary = [{'timestamp': [0.0, 4.5], 'text': ' The next generation of Rayban meta smart glasses.'},
+                           {'timestamp': [4.5, 14.52],
+                            'text': ' These are the first smart glasses that are built in shipping with meta AI in them.'},
+                           {'timestamp': [14.52, 23.5],
+                            'text': " Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go."},
+                           {'timestamp': [23.5, 26.0], 'text': " We're going to be issuing a free software update"},
+                           {'timestamp': [26.0, 27.8], 'text': ' to the glasses that makes them multimodal.'}]
     # sample_text = "] The next generation of Rayban meta smart glasses.]\n\
     #                ] These are the first smart glasses that are built in shipping with meta AI in them.]\n\
     #                ] Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go.]\n\
