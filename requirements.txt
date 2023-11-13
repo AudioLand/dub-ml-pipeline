@@ -1,6 +1,6 @@
 requests
 fastapi
-openai
+openai==0.28
 firebase_admin
 python-dotenv
 sentry-sdk
@@ -11,3 +11,7 @@ uvicorn
 langchain
 pydantic==1.10.9
 moviepy~=1.0.3
+pyopenssl
+ndg-httpsclient
+pyasn1
+urllib3
