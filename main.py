@@ -86,12 +86,12 @@ def generate(
         """3. Translate text"""
 
         print('Translating text ...')
-        translate_text(
+        translated_text = translate_text(
             language=target_language,
-            text_segments=text,
+            original_dictionary=text,
             project_id=project_id
         )
-        print("translated_text - ", text)
+        print("translated_text - ", translated_text)
 
         """4. Detect gender of the voice"""
 
@@ -103,7 +103,7 @@ def generate(
 
         # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
-            text_segments=text,
+            text_segments=translated_text,
             project_id=project_id,
             voice_id=voice_id,
             detected_gender='male',
@@ -185,4 +185,4 @@ if __name__ == "__main__":
     # target_language = "Russian"
     # voice_id = "TxGEqnHWrfWFTfGW9XjX" # Josh_id
     # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # generate(project_id, target_language, voice_id, original_file_location)
+    # generate(project_id, target_language, voice_id, original_file_location, "")
