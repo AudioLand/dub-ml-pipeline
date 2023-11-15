@@ -151,7 +151,7 @@ def generate(
         print(f"[DONE] File uploaded to cloud storage, destination_blob_name - {destination_blob_name}")
 
         """Remove all processed files"""
-        
+
         os.remove(destination_local_file_name)
         os.remove(source_file_name)
         os.remove(translated_audio_local_path)
@@ -195,16 +195,16 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
-    project_id = "07fsfECkwma6fVTDyqQf"
-    target_language = "Russian"
-    voice_id = "TxGEqnHWrfWFTfGW9XjX"  # Josh_id
-    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    organization_id = "ZXIFYVhPAMql66Vg5f5Q"
-    generate(
-        project_id=project_id,
-        target_language=target_language,
-        voice_id=voice_id,
-        original_file_location=original_file_location,
-        organization_id=organization_id
-    )
+    # user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
+    # project_id = "07fsfECkwma6fVTDyqQf"
+    # target_language = "Russian"
+    # voice_id = "TxGEqnHWrfWFTfGW9XjX"  # Josh_id
+    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    # organization_id = "ZXIFYVhPAMql66Vg5f5Q"
+    # generate(
+    #     project_id=project_id,
+    #     target_language=target_language,
+    #     voice_id=voice_id,
+    #     original_file_location=original_file_location,
+    #     organization_id=organization_id
+    # )
