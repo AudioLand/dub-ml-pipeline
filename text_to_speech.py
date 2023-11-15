@@ -1,24 +1,21 @@
 import time
 
-from elevenlabs import generate, set_api_key
-from elevenlabs import APIError, generate, set_api_key
-from moviepy.audio.io.AudioFileClip import AudioFileClip
-from elevenlabs import APIError, generate, set_api_key, voices
+from elevenlabs import APIError, generate, set_api_key, voices, RateLimitError
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 
-from config.config import LABS11_API_KEY
+from config.config import ELEVEN_LABS_API_KEY
 from config.logger import catch_error
-from split_text import split_text
 from split_text import MAX_SYMBOLS_NUMBER
+from split_text import split_text
 
-set_api_key(LABS11_API_KEY)
+set_api_key(ELEVEN_LABS_API_KEY)
 
 VOICE_MAPPING = {
     "female": '21m00Tcm4TlvDq8ikWAM',
     "male": 'TxGEqnHWrfWFTfGW9XjX'
 }
 
-ELEVENLABS_VOICES_ID = list(map(lambda voice: voice.voice_id, voices()))
+ELEVENLABS_VOICES_IDS = list(map(lambda voice: voice.voice_id, voices()))
 
 text_to_speech_exception = Exception(
     "Error while processing text to speech"
@@ -27,10 +24,12 @@ text_to_speech_exception = Exception(
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
 
+# TODO: fix text_segments type (it's not str, it's dict)
 def text_to_speech(text_segments: str, project_id: str, voice_id: str = None, detected_gender: str = None):
     try:
-        if voice_id is None or voice_id not in ELEVENLABS_VOICES_ID:
-            voice_id = VOICE_MAPPING.get(detected_gender, 'TxGEqnHWrfWFTfGW9XjX')  # Default to "Josh" if gender is not recognized
+        if voice_id is None or voice_id not in ELEVENLABS_VOICES_IDS:
+            # Default to "Josh" if gender is not recognized
+            voice_id = VOICE_MAPPING.get(detected_gender, 'TxGEqnHWrfWFTfGW9XjX')
         translated_audio_file_name = f"translated-{project_id}.mp3"
 
         open(translated_audio_file_name, mode='w').close()
@@ -78,16 +77,21 @@ def create_sound(text: str, voice: str, translated_audio_file_name: str):
         print("[text_to_speech] API Error:", str(error))
 
         # If too many requests to 11labs, wait and then try again
-        if error.status == "too_many_concurrent_requests":
+        if isinstance(error, RateLimitError):
+            print(f"Wait {DELAY_TO_WAIT_IN_SECONDS} seconds and then repeat request...")
             time.sleep(DELAY_TO_WAIT_IN_SECONDS)
             create_sound(text, voice, translated_audio_file_name)
         raise text_to_speech_exception
 
+
 if __name__ == "__main__":
     sample_text_segments = [
-        {'timestamp': [0.0, 2.28], 'text': 'Language models today, while useful for a variety of tasks, are still limited. The only information they can learn from is their training data.'},
-        {'timestamp': [3.28, 5.04], 'text': 'This information can be out-of-date and is one-size fits all across applications. Furthermore, the only thing language models can do out-of-the-box is emit text.'},
-        {'timestamp': [6.0, 15.0], 'text': 'This text can contain useful instructions, but to actually follow these instructions you need another process.'}
+        {'timestamp': [0.0, 2.28],
+         'text': 'Language models today, while useful for a variety of tasks, are still limited. The only information they can learn from is their training data.'},
+        {'timestamp': [3.28, 5.04],
+         'text': 'This information can be out-of-date and is one-size fits all across applications. Furthermore, the only thing language models can do out-of-the-box is emit text.'},
+        {'timestamp': [6.0, 15.0],
+         'text': 'This text can contain useful instructions, but to actually follow these instructions you need another process.'}
     ]
 
     project_id_sample = "sample_project_id"

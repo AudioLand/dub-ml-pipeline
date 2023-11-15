@@ -1,21 +1,19 @@
 import os
 import tempfile
-
-import openai
-from pydub import AudioSegment
 from pathlib import Path
-import requests
 
-from config.config import ENDPOINT_WHISPER_API_URL
+import requests
+from pydub import AudioSegment
+
+from config.config import ENDPOINT_WHISPER_API_URL, WHISPER_BEARER_TOKEN
 from config.logger import catch_error
-from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 speech_to_text_exception = Exception(
     "Error while processing speech to text"
 )
 
 headers = {
-    "Authorization": "Bearer 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",
+    "Authorization": f"Bearer {WHISPER_BEARER_TOKEN}",
     "Content-Type": "audio/m4a"
 }
 
