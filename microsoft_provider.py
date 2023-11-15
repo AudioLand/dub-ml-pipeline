@@ -10,8 +10,8 @@ VOICE_MAPPING = {
 }
 
 # TODO: add missing file
-# with open('languages_gender_microsoft_tts_dict.txt', 'r') as f:
-#     language_gender_dict = json.load(f)
+with open('languages_gender_microsoft_tts_dict.txt', 'r') as f:
+    language_gender_dict = json.load(f)
 
 # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
 speech_config = speechsdk.SpeechConfig(subscription=os.environ.get('SPEECH_KEY'),
@@ -49,10 +49,10 @@ def microsoft_provider(text_segments: list, filename: str, language: str, detect
 
     detected_gender = VOICE_MAPPING.get(detected_gender, 'male')
     # TODO: fix compilation error and add voice and text to the create_ssml_with_pauses method.
-    # voice = language_gender_dict[language][detected_gender]
+    voice = language_gender_dict[language][detected_gender]
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
     # Joins segments into text with pause marks.
-    text = create_ssml_with_pauses(text_segments)
+    text = create_ssml_with_pauses(text_segments, voice_name=voice, language=language)
     speech_synthesis_result = speech_synthesizer.speak_ssml_async(text).get()
 
     if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
@@ -76,5 +76,5 @@ if __name__ == "__main__":
         {'timestamp': [6.0, 15.0],
          'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
     ]
-    microsoft_provider(sample_text_segments, "translated-test.mp3", 'English', 'female')
+    microsoft_provider(sample_text_segments, "translated-test.mp3", 'English (Singapore)', 'female')
     audio = AudioSegment.from_file("translated-test.mp3")
