@@ -4,6 +4,7 @@ from microsoft_provider import microsoft_provider
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent
 
+
 text_to_speech_exception = Exception(
     "Error while processing text to speech"
 )
@@ -107,3 +108,11 @@ if __name__ == "__main__":
     ]
     text_to_speech(sample_text_segments, "English", "test")
     print(sample_text_segments)
+
+    for segment in sample_text_segments:
+        assert 'audio_timestamp' in segment, "Each segment should have an 'audio_timestamp' key."
+        assert isinstance(segment['audio_timestamp'], list), "'audio_timestamp' should be a list."
+        assert len(segment['audio_timestamp']) == 2, "'audio_timestamp' should have two values: start and end times."
+        assert segment['audio_timestamp'][0] < segment['audio_timestamp'][1], "Start time should be less than end time."
+
+    print("All tests passed!")

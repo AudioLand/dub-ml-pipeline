@@ -46,7 +46,7 @@ def download_blob(
         raise download_blob_exception
 
 
-def upload_blob_and_delete_local_file(
+def upload_blob(
     source_file_name: str,
     destination_blob_name: str,
     project_id: str
@@ -54,11 +54,10 @@ def upload_blob_and_delete_local_file(
     try:
         blob = bucket.blob(destination_blob_name)
         blob.upload_from_filename(source_file_name)
-        os.remove(source_file_name)
 
         blob.make_public()
         public_link = blob.public_url
-        print("Public url for this file:", public_link)
+        print("[upload_blob] Public url for this file:", public_link)
         return public_link
 
     except Exception as e:

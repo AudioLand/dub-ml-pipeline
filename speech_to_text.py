@@ -1,25 +1,26 @@
 import os
 import tempfile
-
-import openai
-from pydub import AudioSegment
+import time
 from pathlib import Path
-import requests
 
-from config.config import ENDPOINT_WHISPER_API_URL
+import requests
+from pydub import AudioSegment
+from requests.exceptions import SSLError
+
+from config.config import ENDPOINT_WHISPER_API_URL, WHISPER_BEARER_TOKEN
 from config.logger import catch_error
-from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
 
 speech_to_text_exception = Exception(
     "Error while processing speech to text"
 )
 
 headers = {
-    "Authorization": "Bearer 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",
+    "Authorization": f"Bearer {WHISPER_BEARER_TOKEN}",
     "Content-Type": "audio/m4a"
 }
 
 MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
+DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
 
 
 def query(filename):
@@ -87,6 +88,14 @@ def speech_to_text(file_path: str, project_id: str):
             project_id=project_id
         )
         raise speech_to_text_exception
+
+    except SSLError as se:
+        print("[speech_to_text] Connection Error:", str(se))
+
+        # Wait while endpoint started
+        print(f"Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds and then repeat request to whisper endpoint...")
+        time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
+        return speech_to_text(file_path, project_id)
 
     except Exception as e:
         # Handle generic exceptions and provide feedback
