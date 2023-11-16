@@ -60,13 +60,13 @@ def text_to_speech(text_segments: list, target_language: str, project_id: str, v
                    detected_gender: str = None):
     translated_audio_file_name = f"translated-{project_id}.mp3"
     try:
-        if target_language in ELEVENLABS_LANGUAGES and False:
-            elevenlabs_provider(text=text_segments,
+        if target_language in ELEVENLABS_LANGUAGES:
+            elevenlabs_provider(text_segments=text_segments,
                                 filename=translated_audio_file_name,
                                 voice_id=voice_id,
                                 detected_gender=detected_gender
                                 )
-        elif target_language in MICROSOFT_LANGUAGES or True:
+        elif target_language in MICROSOFT_LANGUAGES:
             microsoft_provider(text_segments=text_segments,
                                filename=translated_audio_file_name,
                                language=target_language,
