@@ -10,6 +10,8 @@ text_to_speech_exception = Exception(
 
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
+AUDIO_SEGMENT_PAUSE = 3000
+
 ELEVENLABS_LANGUAGES = [
     "English", "Japanese", "Chinese", "German", "Hindi",
     "French", "Korean", "Portuguese", "Italian", "Spanish",
@@ -67,7 +69,8 @@ def text_to_speech(text_segments: list, target_language: str, project_id: str, v
             microsoft_provider(text_segments=text_segments,
                                filename=translated_audio_file_name,
                                language=target_language,
-                               detected_gender=detected_gender
+                               detected_gender=detected_gender,
+                               pause_duration_ms=AUDIO_SEGMENT_PAUSE
                                )
         else:
             # TODO: raise Exception вызывает бесконечный цикл
@@ -94,11 +97,13 @@ def text_to_speech(text_segments: list, target_language: str, project_id: str, v
 if __name__ == "__main__":
     sample_text_segments = [
         {'timestamp': [0.0, 2.28],
-         'text': 'Language models today are still limited.'},
+         'text': 'Языковые модели сегодня все еще ограничены.'},
         {'timestamp': [3.28, 5.04],
-         'text': 'This information can be out-of-date.'},
+         'text': 'Эта информация может быть устаревшей.'},
+        {'timestamp': [5.5, 5.9],
+         'text': 'Ура!'},
         {'timestamp': [6.0, 15.0],
-         'text': 'This text can contain useful instructions, but to actually follow...'}
+         'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
     ]
     text_to_speech(sample_text_segments, "English", "test")
     print(sample_text_segments)
