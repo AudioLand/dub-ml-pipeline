@@ -78,9 +78,9 @@ def create_sound(text: str, voice: str, translated_audio_file_name: str):
 
         # If too many requests to 11labs, wait and then try again
         if isinstance(error, RateLimitError):
-            print(f"Wait {DELAY_TO_WAIT_IN_SECONDS} seconds and then repeat request...")
+            print(f"Wait {DELAY_TO_WAIT_IN_SECONDS} seconds and then repeat request to 11labs...")
             time.sleep(DELAY_TO_WAIT_IN_SECONDS)
-            create_sound(text, voice, translated_audio_file_name)
+            return create_sound(text, voice, translated_audio_file_name)
         raise text_to_speech_exception
 
 

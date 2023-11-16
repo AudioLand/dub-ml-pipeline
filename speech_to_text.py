@@ -1,9 +1,11 @@
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import requests
 from pydub import AudioSegment
+from requests.exceptions import SSLError
 
 from config.config import ENDPOINT_WHISPER_API_URL, WHISPER_BEARER_TOKEN
 from config.logger import catch_error
@@ -18,6 +20,7 @@ headers = {
 }
 
 MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
+DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
 
 
 def query(filename):
@@ -85,6 +88,14 @@ def speech_to_text(file_path: str, project_id: str):
             project_id=project_id
         )
         raise speech_to_text_exception
+
+    except SSLError as se:
+        print("[speech_to_text] Connection Error:", str(se))
+
+        # Wait while endpoint started
+        print(f"Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds and then repeat request to whisper endpoint...")
+        time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
+        return speech_to_text(file_path, project_id)
 
     except Exception as e:
         # Handle generic exceptions and provide feedback
