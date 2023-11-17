@@ -14,6 +14,10 @@ speech_to_text_exception = Exception(
     "Error while processing speech to text"
 )
 
+whisper_endpoint_exception = Exception(
+    "Error while sending request to Whisper endpoint"
+)
+
 headers = {
     "Authorization": f"Bearer {WHISPER_BEARER_TOKEN}",
     "Content-Type": "audio/m4a"
@@ -23,10 +27,16 @@ MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
 DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
 
 
-def query(filename):
-    with open(filename, "rb") as f:
+def query(temp_file_name: str):
+    with open(temp_file_name, "rb") as f:
         data = f.read()
     response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
+
+    if not response.ok:
+        print(f"Status code: {response.status_code}")
+        print(f"Details: {response.json()}")
+        raise whisper_endpoint_exception
+
     return response.json()
 
 
@@ -91,9 +101,8 @@ def speech_to_text(file_path: str, project_id: str):
 
     except SSLError as se:
         print("[speech_to_text] Connection Error:", str(se))
-
         # Wait while endpoint started
-        print(f"Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds and then repeat request to whisper endpoint...")
+        print(f"(speech_to_text) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds and then repeat request to whisper endpoint...")
         time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
         return speech_to_text(file_path, project_id)
 
@@ -105,3 +114,14 @@ def speech_to_text(file_path: str, project_id: str):
             project_id=project_id
         )
         raise speech_to_text_exception
+
+
+if __name__ == "__main__":
+    file_path = "07fsfECkwma6fVTDyqQf.mp4"
+    project_id = "07fsfECkwma6fVTDyqQf"
+    transcript_parts, audio_duration_in_seconds = speech_to_text(
+        file_path=file_path,
+        project_id=project_id
+    )
+    print(transcript_parts)
+    print(audio_duration_in_seconds)

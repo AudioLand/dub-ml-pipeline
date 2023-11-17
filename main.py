@@ -1,7 +1,5 @@
 # Local imports
 # from integrations.youtube_utils import youtube_download
-
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -9,9 +7,6 @@ from fastapi import FastAPI
 
 from config.logger import catch_error
 from get_file_type_by_suffix import get_file_type_by_suffix
-from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
-from integrations.firebase.firestore_update_user_tokens import update_user_tokens
-from integrations.firebase.google_cloud_storage import download_blob, upload_blob
 from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
@@ -35,7 +30,7 @@ app = FastAPI()
 def generate(
     project_id: str,
     target_language: str,
-    voice_id: str,
+    voice_id: int,
     original_file_location: str,
     organization_id: str,
 ):
@@ -43,9 +38,7 @@ def generate(
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
         source_blob_name = original_file_location
 
-        # pipeline execution
         now = datetime.now()
-
         current_time = now.strftime("%H:%M:%S")
         print(f"[START] Job Started! Current Time: {current_time}")
 
@@ -56,6 +49,7 @@ def generate(
         original_file_extension = Path(original_file_location).suffix
         # Combine project_id with the extracted extension
         destination_local_file_name = f"{project_id}{original_file_extension}"
+        # FIXME: uncomment
         # download_blob(
         #     source_blob_name=source_blob_name,
         #     destination_file_name=destination_local_file_name,
@@ -68,6 +62,7 @@ def generate(
         """1. Change project status to "translating"""
 
         print("[START] Updating project status to 'translating'...")
+        # FIXME: uncomment
         # update_project_status_and_translated_link_by_id(
         #     project_id=project_id,
         #     status="translating",
@@ -78,18 +73,18 @@ def generate(
         """2. Convert video to text"""
 
         print(f"[START] Speech to text, video_path - {local_file_path}")
-        original_text, used_seconds_count = speech_to_text(
+        original_text_segments, used_seconds_count = speech_to_text(
             file_path=local_file_path,
             project_id=project_id
         )
-        print(f"[DONE] Speech to text completed, original_text - {original_text}")
+        print(f"[DONE] Speech to text completed, original_text_segments - {original_text_segments}")
 
         """3. Translate text"""
 
         print("[START] Translating text ...")
         translated_text_segments = translate_text(
             language=target_language,
-            original_dictionary=original_text,
+            original_text_segments=original_text_segments,
             project_id=project_id
         )
         print(f"[DONE] Translation completed, translated_text_segments - {translated_text_segments}")
@@ -101,30 +96,29 @@ def generate(
         """5. Generate audio from translated text"""
 
         print("[START] Text to speech ...")
-        # translated_audio_local_path {project_id}_audio_translated.mp3 - in mp3
         translated_audio_local_path = text_to_speech(
             text_segments=translated_text_segments,
-            project_id=project_id,
             voice_id=voice_id,
-            detected_gender='male',
+            project_id=project_id,
         )
         print(f"[DONE] Text to speech completed, path to translated audio - {translated_audio_local_path}")
 
-        if get_file_type_by_suffix(local_file_path) == 'video':
+        processed_project_is_video = get_file_type_by_suffix(local_file_path) == "video"
+        if processed_project_is_video:
             print("[START] Overlay audio to video ...")
             # Overlay audio on video
             source_file_name = overlay_audio(
                 video_path=local_file_path,
                 audio_path=translated_audio_local_path,
-                segments=translated_text_segments,
-                project_id=project_id
+                text_segments=translated_text_segments,
+                project_id=project_id,
+                show_segment_logs=True
             )
             print(f"[DONE] Overlay audio completed")
         else:
             # TODO: create overlay for audio too.
             source_file_name = translated_audio_local_path
 
-        return
         """6. Upload audio to cloud storage"""
 
         """
@@ -144,35 +138,42 @@ def generate(
         destination_blob_name = f"{original_path}/{original_filename_without_extension}_translated{original_file_extension}"
 
         print("[START] Uploading translated file to cloud storage ...")
-        file_public_link = upload_blob(
-            source_file_name=source_file_name,
-            destination_blob_name=destination_blob_name,
-            project_id=project_id
-        )
+        # FIXME: uncomment
+        # file_public_link = upload_blob(
+        #     source_file_name=source_file_name,
+        #     destination_blob_name=destination_blob_name,
+        #     project_id=project_id
+        # )
         print(f"[DONE] File uploaded to cloud storage, destination_blob_name - {destination_blob_name}")
 
         """Remove all processed files"""
 
-        os.remove(destination_local_file_name)
-        os.remove(source_file_name)
-        os.remove(translated_audio_local_path)
+        # Remove original file
+        # os.remove(destination_local_file_name)
+        # Remove translated file
+        # os.remove(source_file_name)
+        # Remove
+        # if processed_project_is_video:
+        #     os.remove(translated_audio_local_path)
 
         """7. Change project status to "translated"""
 
         print("[START] Updating project status to 'translated'...")
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status="translated",
-            translated_file_link=file_public_link
-        )
+        # FIXME: uncomment
+        # update_project_status_and_translated_link_by_id(
+        #     project_id=project_id,
+        #     status="translated",
+        #     translated_file_link=file_public_link
+        # )
         print("[DONE] Project status updated.")
 
         print("[START] Updating user used tokens...")
-        update_user_tokens(
-            organization_id=organization_id,
-            tokens_in_seconds=used_seconds_count,
-            project_id=project_id,
-        )
+        # FIXME: uncomment
+        # update_user_tokens(
+        #     organization_id=organization_id,
+        #     tokens_in_seconds=used_seconds_count,
+        #     project_id=project_id,
+        # )
         print("[START] User used tokens updated.")
 
         now = datetime.now()
@@ -196,16 +197,16 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    # user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
-    # project_id = "07fsfECkwma6fVTDyqQf"
-    # target_language = "Russian (Russia)"
-    # voice_id = "TxGEqnHWrfWFTfGW9XjX"  # Josh_id
-    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    # organization_id = "ZXIFYVhPAMql66Vg5f5Q"
-    # generate(
-    #     project_id=project_id,
-    #     target_language=target_language,
-    #     voice_id=voice_id,
-    #     original_file_location=original_file_location,
-    #     organization_id=organization_id
-    # )
+    user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
+    project_id = "07fsfECkwma6fVTDyqQf"
+    target_language = "Russian"
+    voice_id = 165
+    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    organization_id = "ZXIFYVhPAMql66Vg5f5Q"
+    generate(
+        project_id=project_id,
+        target_language=target_language,
+        voice_id=voice_id,
+        original_file_location=original_file_location,
+        organization_id=organization_id
+    )

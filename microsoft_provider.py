@@ -1,29 +1,27 @@
-import os
-import azure.cognitiveservices.speech as speechsdk
-import json
+from azure.cognitiveservices.speech import SpeechConfig, SpeechSynthesizer, ResultReason, CancellationReason
+from azure.cognitiveservices.speech.audio import AudioOutputConfig
 
-from pydub import AudioSegment
-
-VOICE_MAPPING = {
-    "female": 'female',
-    "male": 'male'
-}
-
-with open('languages_gender_microsoft_tts_dict.txt', 'r') as f:
-    language_gender_dict = json.load(f)
+from config.config import SPEECH_REGION, SPEECH_KEY
 
 # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
-speech_config = speechsdk.SpeechConfig(subscription=os.environ.get('SPEECH_KEY'),
-                                       region=os.environ.get('SPEECH_REGION'))
+speech_config = SpeechConfig(
+    subscription=SPEECH_KEY,
+    region=SPEECH_REGION
+)
 
 
 # languages can be found at https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=tts
-def create_ssml_with_pauses(text_segments, voice_name, language, pause_duration_ms):
+def create_ssml_with_pauses(
+    text_segments: list[dict],
+    original_voice_id: str,
+    language: str,
+    pause_duration_ms: int
+):
     """
     Create an SSML string with pauses and voice specification for Azure's Speech Service.
 
     :param text_segments: A list of dictionaries with 'text' keys.
-    :param voice_name: The name of the voice to be used for speech synthesis.
+    :param original_voice_id: The name of the voice to be used for speech synthesis.
     :param language: Language value in format expected from Microsoft.
     :param pause_duration_ms: The duration of pauses in milliseconds (default is 1.5 seconds).
     :return: A string formatted in SSML with pauses, voice tag, and necessary namespaces.
@@ -31,7 +29,7 @@ def create_ssml_with_pauses(text_segments, voice_name, language, pause_duration_
     ssml_parts = [
         '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts"',
         f' xml:lang="{language}">',
-        f'<voice name="{voice_name}">',
+        f'<voice name="{original_voice_id}">',
         f'<break time="{pause_duration_ms}ms"/>'
     ]
     for segment in text_segments:
@@ -41,25 +39,40 @@ def create_ssml_with_pauses(text_segments, voice_name, language, pause_duration_
     return ''.join(ssml_parts)
 
 
-def microsoft_provider(text_segments: list, filename: str, language: str, pause_duration_ms: int, detected_gender: str = None):
-    audio_config = speechsdk.audio.AudioOutputConfig(filename=filename)
+def generate_audio_with_microsoft_provider(
+    output_audio_file_path: str,
+    text_segments: list[dict],
+    original_voice_id: str,
+    language: str,
+    pause_duration_ms: int,
+):
+    audio_config = AudioOutputConfig(filename=output_audio_file_path)
 
-    detected_gender = VOICE_MAPPING.get(detected_gender, 'male')
-    voice = language_gender_dict[language][detected_gender]
-    speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
+    speech_synthesizer = SpeechSynthesizer(
+        speech_config=speech_config,
+        audio_config=audio_config
+    )
     # Joins segments into text with pause marks.
-    text = create_ssml_with_pauses(text_segments, voice, language, pause_duration_ms)
-    speech_synthesis_result = speech_synthesizer.speak_ssml_async(text).get()
+    text_for_synthesizing = create_ssml_with_pauses(
+        text_segments=text_segments,
+        original_voice_id=original_voice_id,
+        language=language,
+        pause_duration_ms=pause_duration_ms
+    )
+    speech_synthesis_result = speech_synthesizer.speak_ssml_async(text_for_synthesizing).get()
 
-    if speech_synthesis_result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-        print("Speech synthesized for text [{}]".format(text))
-    elif speech_synthesis_result.reason == speechsdk.ResultReason.Canceled:
+    # If synthesizing completed
+    if speech_synthesis_result.reason == ResultReason.SynthesizingAudioCompleted:
+        print(f"(microsoft_provider) Speech synthesized completed")
+
+    # If synthesizing canceled
+    elif speech_synthesis_result.reason == ResultReason.Canceled:
         cancellation_details = speech_synthesis_result.cancellation_details
-        print("Speech synthesis canceled: {}".format(cancellation_details.reason))
-        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+        print(f"(microsoft_provider) Speech synthesis canceled: {cancellation_details.reason}")
+
+        if cancellation_details.reason == CancellationReason.Error:
             if cancellation_details.error_details:
-                print("Error details: {}".format(cancellation_details.error_details))
-                print("Did you set the speech resource key and region values?")
+                print(f"(microsoft_provider) Error details: {cancellation_details.error_details}")
 
 
 # For local test
@@ -74,5 +87,14 @@ if __name__ == "__main__":
         {'timestamp': [6.0, 15.0],
          'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
     ]
-    microsoft_provider(sample_text_segments, "translated-test.mp3", 'Russian (Russia)', 3000,'male')
-    audio = AudioSegment.from_file("translated-test.mp3")
+    output_audio_file_path = "translated-test.mp3"
+    text_segments = sample_text_segments
+    original_voice_id = "ru-RU-DmitryNeural"
+    language = "russian"
+    generate_audio_with_microsoft_provider(
+        output_audio_file_path=output_audio_file_path,
+        text_segments=text_segments,
+        original_voice_id=original_voice_id,
+        language=language,
+        pause_duration_ms=3000,
+    )

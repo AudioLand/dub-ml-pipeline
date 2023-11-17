@@ -1,43 +1,53 @@
 import time
-from elevenlabs import APIError, generate, set_api_key, voices
-from config.config import LABS11_API_KEY
 
-set_api_key(LABS11_API_KEY)
+from elevenlabs import APIError, generate as generate_audio, set_api_key, RateLimitError
 
-VOICE_MAPPING = {
-    "female": '21m00Tcm4TlvDq8ikWAM',
-    "male": 'TxGEqnHWrfWFTfGW9XjX'
-}
+from config.config import ELEVEN_LABS_API_KEY
 
-ELEVENLABS_VOICES_ID = list(map(lambda voice: voice.voice_id, voices()))
+set_api_key(ELEVEN_LABS_API_KEY)
+
+text_to_speech_exception = Exception(
+    "Error while processing text to speech"
+)
+
+DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
 
-def elevenlabs_provider(text_segments: list, filename: str, pause_duration_ms: int,
-                        voice_id: str, detected_gender: str = None):
-    pause_tag = f' <break time="{pause_duration_ms/1000}s"/> '
-    combined_text = ''
+def generate_audio_with_elevenlabs_provider(
+    output_audio_file_path: str,
+    text_segments: list[dict],
+    original_voice_id: str,
+    pause_duration_ms: int,
+):
+    pause_tag = f" <break time=\"{pause_duration_ms / 1000}s\"/> "
+    combined_text = ""
 
     for segment in text_segments:
         combined_text += segment['text'] + pause_tag
 
-    if not voice_id:
-        voice_id = VOICE_MAPPING.get(detected_gender, VOICE_MAPPING["male"])
-
     try:
-        audio = generate(
+        audio = generate_audio(
             text=combined_text,
-            voice=voice_id,
+            voice=original_voice_id,
             model="eleven_multilingual_v2"
         )
-        with open(filename, 'wb') as f:
+        with open(output_audio_file_path, 'wb') as f:
             f.write(audio)
 
     except APIError as error:
-        print("[text_to_speech] API Error:", str(error))
-        if error.status == "too_many_concurrent_requests":
-            time.sleep(5 * 60)  # 5 minutes delay
-            return elevenlabs_provider(text_segments, filename, pause_duration_ms, detected_gender)
-        raise Exception("Error while processing text to speech")
+        print("(elevenlabs_provider) API Error:", str(error))
+
+        # If too many requests to 11labs, wait and then try again
+        if isinstance(error, RateLimitError):
+            print(f"(elevenlabs_provider) Wait {DELAY_TO_WAIT_IN_SECONDS} seconds and then repeat request to 11labs...")
+            time.sleep(DELAY_TO_WAIT_IN_SECONDS)
+            return generate_audio_with_elevenlabs_provider(
+                output_audio_file_path,
+                text_segments,
+                original_voice_id,
+                pause_duration_ms,
+            )
+        raise text_to_speech_exception
 
 
 # Example usage
@@ -48,4 +58,11 @@ if __name__ == "__main__":
         {'timestamp': [5.5, 5.9], 'text': 'Ура!'},
         {'timestamp': [6.0, 15.0], 'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
     ]
-    elevenlabs_provider(sample_text_segments, "translated-test.mp3", 'Russian', 3000, 'male')
+    output_audio_file_path = "translated-test.mp3"
+    original_voice_id = "N2lVS1w4EtoT3dr4eOWO"
+    generate_audio_with_elevenlabs_provider(
+        output_audio_file_path=output_audio_file_path,
+        text_segments=sample_text_segments,
+        original_voice_id=original_voice_id,
+        pause_duration_ms=3000,
+    )
