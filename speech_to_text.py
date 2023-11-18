@@ -30,13 +30,23 @@ DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
 def query(temp_file_name: str):
     with open(temp_file_name, "rb") as f:
         data = f.read()
+
+    print("(whisper_endpoint_query) Sending request to Whisper endpoint...")
     response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
 
     if not response.ok:
-        print(f"Status code: {response.status_code}")
-        print(f"Details: {response.json()}")
+        print(f"(whisper_endpoint_response) Status code: {response.status_code}")
+        print(f"(whisper_endpoint_response) Details: {response.json()}")
+
+        if response.status_code == 502:
+            # Wait while endpoint started
+            print(f"(whisper_endpoint_query) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
+            time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
+            print(f"(whisper_endpoint_query) Trying to send request to Whisper endpoint again...")
+            return query(temp_file_name)
         raise whisper_endpoint_exception
 
+    print(f"(whisper_endpoint_response) Sending request completed.")
     return response.json()
 
 
@@ -102,8 +112,9 @@ def speech_to_text(file_path: str, project_id: str):
     except SSLError as se:
         print("[speech_to_text] Connection Error:", str(se))
         # Wait while endpoint started
-        print(f"(speech_to_text) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds and then repeat request to whisper endpoint...")
+        print(f"(speech_to_text) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
         time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
+        print(f"(speech_to_text) Trying to send request to Whisper endpoint again...")
         return speech_to_text(file_path, project_id)
 
     except Exception as e:
