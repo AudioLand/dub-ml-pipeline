@@ -85,7 +85,8 @@ def generate(
         translated_text_segments = translate_text(
             language=target_language,
             original_text_segments=original_text_segments,
-            project_id=project_id
+            project_id=project_id,
+            show_logs=True
         )
         print(f"[DONE] Translation completed, translated_text_segments - {translated_text_segments}")
 
@@ -112,7 +113,7 @@ def generate(
                 audio_path=translated_audio_local_path,
                 text_segments=translated_text_segments,
                 project_id=project_id,
-                show_segment_logs=True
+                show_logs=True
             )
             print(f"[DONE] Overlay audio completed")
         else:
@@ -149,6 +150,7 @@ def generate(
         """Remove all processed files"""
 
         # Remove original file
+        # FIXME: uncomment
         # os.remove(destination_local_file_name)
         # Remove translated file
         # os.remove(source_file_name)
@@ -199,8 +201,8 @@ if __name__ == "__main__":
     print("main started")
     user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
     project_id = "07fsfECkwma6fVTDyqQf"
-    target_language = "Russian"
-    voice_id = 165
+    target_language = "English"
+    voice_id = 1242
     original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
     organization_id = "ZXIFYVhPAMql66Vg5f5Q"
     generate(
