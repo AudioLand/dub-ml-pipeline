@@ -26,34 +26,45 @@ headers = {
 
 MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
 DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
+DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS = 5
 
 
 def send_request_to_whisper_endpoint(temp_file_name: str):
-    with open(temp_file_name, "rb") as f:
-        data = f.read()
+    try:
+        with open(temp_file_name, "rb") as f:
+            data = f.read()
 
-    print("(whisper_endpoint_query) Sending request to Whisper endpoint...")
-    request_time = datetime.now()
-    response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
-    response_time = datetime.now()
+        print("(whisper_endpoint_query) Sending request to Whisper endpoint...")
+        request_time = datetime.now()
+        response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
+        response_time = datetime.now()
+        print(response.json())
 
-    time_difference = response_time - request_time
-    print(f"(whisper_endpoint_response) Response time is {time_difference}")
+        time_difference = response_time - request_time
+        print(f"(whisper_endpoint_response) Response time is {time_difference}")
 
-    if not response.ok:
-        print(f"(whisper_endpoint_response) Status code: {response.status_code}")
-        print(f"(whisper_endpoint_response) Details: {response.json()}")
+        if not response.ok:
+            print(f"(whisper_endpoint_response) Status code: {response.status_code}")
+            print(f"(whisper_endpoint_response) Details: {response.json()}")
 
-        if response.status_code == 502:
-            # Wait while endpoint started
-            print(f"(whisper_endpoint_query) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
-            time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
-            print(f"(whisper_endpoint_query) Trying to send request to Whisper endpoint again...")
-            return send_request_to_whisper_endpoint(temp_file_name)
-        raise whisper_endpoint_exception
+            if response.status_code == 502:
+                # Wait while endpoint started
+                print(f"(whisper_endpoint_query) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
+                time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
+                print(f"(whisper_endpoint_query) Trying to send request to Whisper endpoint again...")
+                return send_request_to_whisper_endpoint(temp_file_name)
+            raise whisper_endpoint_exception
 
-    print(f"(whisper_endpoint_response) Sending request completed.")
-    return response.json()
+        print(f"(whisper_endpoint_response) Sending request completed.")
+        return response.json()
+    except ConnectionResetError as cre:
+        print(f"(speech_to_text) ConnectionResetError: {str(cre)}")
+        # Try again because something went wrong
+        print(f"(whisper_endpoint_response) Something went wrong")
+        print(f"(whisper_endpoint_response) Wait {DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS} seconds to repeat...")
+        print(f"(whisper_endpoint_query) Trying to send request to Whisper endpoint again...")
+        time.sleep(DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS)
+        return send_request_to_whisper_endpoint(temp_file_name)
 
 
 def speech_to_text(file_path: str, project_id: str):
@@ -99,7 +110,7 @@ def speech_to_text(file_path: str, project_id: str):
                     chunk['timestamp'][0] += elapsed_time / 1000  # convert milliseconds to seconds
                     chunk['timestamp'][1] += elapsed_time / 1000  # convert milliseconds to seconds
 
-                transcript_parts += chunk
+                transcript_parts += json_response['chunks']
 
             # Update the elapsed_time
             elapsed_time += one_minute_in_ms
@@ -116,7 +127,7 @@ def speech_to_text(file_path: str, project_id: str):
         raise speech_to_text_exception
 
     except SSLError as se:
-        print("[speech_to_text] Connection Error:", str(se))
+        print(f"(speech_to_text) Connection SSLError: {str(se)}")
         # Wait while endpoint started
         print(f"(speech_to_text) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
         time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
