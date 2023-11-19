@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -27,12 +28,17 @@ MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
 DELAY_TO_REPEAT_REQUEST_IN_SECONDS = 3 * 60
 
 
-def query(temp_file_name: str):
+def send_request_to_whisper_endpoint(temp_file_name: str):
     with open(temp_file_name, "rb") as f:
         data = f.read()
 
     print("(whisper_endpoint_query) Sending request to Whisper endpoint...")
+    request_time = datetime.now()
     response = requests.post(ENDPOINT_WHISPER_API_URL, headers=headers, data=data)
+    response_time = datetime.now()
+
+    time_difference = response_time - request_time
+    print(f"(whisper_endpoint_response) Response time is {time_difference}")
 
     if not response.ok:
         print(f"(whisper_endpoint_response) Status code: {response.status_code}")
@@ -43,7 +49,7 @@ def query(temp_file_name: str):
             print(f"(whisper_endpoint_query) Wait {DELAY_TO_REPEAT_REQUEST_IN_SECONDS} seconds to repeat...")
             time.sleep(DELAY_TO_REPEAT_REQUEST_IN_SECONDS)
             print(f"(whisper_endpoint_query) Trying to send request to Whisper endpoint again...")
-            return query(temp_file_name)
+            return send_request_to_whisper_endpoint(temp_file_name)
         raise whisper_endpoint_exception
 
     print(f"(whisper_endpoint_response) Sending request completed.")
@@ -86,14 +92,14 @@ def speech_to_text(file_path: str, project_id: str):
                 current_segment.export(temp_file.name, format="wav")
 
                 # Use OpenAI's Whisper ASR to transcribe
-                output = query(temp_file.name)
+                json_response = send_request_to_whisper_endpoint(temp_file.name)
 
                 # Adjust the timestamps by adding the elapsed_time
-                for chunk in output['chunks']:
+                for chunk in json_response['chunks']:
                     chunk['timestamp'][0] += elapsed_time / 1000  # convert milliseconds to seconds
                     chunk['timestamp'][1] += elapsed_time / 1000  # convert milliseconds to seconds
 
-                transcript_parts += output['chunks']
+                transcript_parts += chunk
 
             # Update the elapsed_time
             elapsed_time += one_minute_in_ms

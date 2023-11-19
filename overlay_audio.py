@@ -19,6 +19,7 @@ def overlay_audio(
     audio_path: str,
     text_segments: list[dict],
     project_id: str,
+    silent_original_audio: bool = True,
     show_logs: bool = False
 ):
     try:
@@ -53,10 +54,8 @@ def overlay_audio(
         final_audio = AudioSegment.from_file(str(video_path), format=video_path.suffix[1:])
 
         # Remove original video sound
-        # final_audio = final_audio.silent(duration=video.duration * 1000)
-
-        # Change original volume to specified value
-        final_audio = final_audio.apply_gain(volume_change=0.5)
+        if silent_original_audio:
+            final_audio = final_audio.silent(duration=video.duration * 1000)
 
         for segment in text_segments:
             if show_logs:

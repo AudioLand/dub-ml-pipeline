@@ -113,6 +113,7 @@ def generate(
                 audio_path=translated_audio_local_path,
                 text_segments=translated_text_segments,
                 project_id=project_id,
+                silent_original_audio=False,
                 show_logs=True
             )
             print(f"[DONE] Overlay audio completed")
