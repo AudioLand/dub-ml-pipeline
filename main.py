@@ -137,7 +137,7 @@ def generate(
         original_file_extension = Path(original_file_location).suffix
 
         # Create the destination blob name with "_translated" appended to the filename
-        destination_blob_name = f"{original_path}/{original_filename_without_extension}_translated{original_file_extension}"
+        destination_blob_name = f"{original_path}/{original_filename_without_extension}-translated{original_file_extension}"
 
         print("[START] Uploading translated file to cloud storage ...")
         # FIXME: uncomment
