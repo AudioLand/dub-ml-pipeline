@@ -1,5 +1,4 @@
-from pydub import AudioSegment
-from pydub.silence import detect_nonsilent
+import time
 
 from config.logger import catch_error
 from config.tts_config import tts_config
@@ -14,43 +13,9 @@ incorrect_language_exception = Exception('Incorrect language')
 
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
-AUDIO_SEGMENT_PAUSE = 3000  # 3 sec
+AUDIO_SEGMENT_PAUSE_IN_MILLISECONDS = 3000
 
-
-def add_audio_timestamps_to_segments(
-    audio_file_path: str,
-    text_segments: list[dict],
-    min_silence_len=500,
-    silence_thresh=-30,
-    padding=300
-):
-    """
-    Detects pauses in an audio file and adds audio_timestamps to segments.
-
-    :param audio_file_path: Path to the audio file.
-    :param text_segments: A list of text segments with 'timestamp' and 'text' keys.
-    :param min_silence_len: Minimum length of silence to consider as a pause in milliseconds.
-    :param silence_thresh: Silence threshold in dB.
-    :param padding: Additional time in milliseconds to add to the end of each segment.
-    :return: A list of tuples where each tuple is (start, end) time of pauses.
-    """
-    audio = AudioSegment.from_file(audio_file_path)
-    speak_times = detect_nonsilent(
-        audio_segment=audio,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh
-    )
-    adjusted_speak_times = [(max(start - padding, 0), min(end + padding, len(audio))) for start, end in speak_times]
-    for segment, (start, end) in zip(text_segments, adjusted_speak_times):
-        segment['audio_timestamp'] = [start, end]
-
-    # Check the time difference between the end of one segment and the start of the next
-    # for i in range(len(adjusted_speak_times) - 1):
-    #     end_of_current = adjusted_speak_times[i][1]
-    #     start_of_next = adjusted_speak_times[i + 1][0]
-    #     time_diff = start_of_next - end_of_current
-    #     if abs(time_diff - 3000) > 100:  # Allowing a 100ms deviation
-    #         print(f'Time gap discrepancy between segments {i} and {i + 1}: {time_diff}ms')
+DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS = 5
 
 
 def get_voice_by_id(voice_id: int):
@@ -70,30 +35,43 @@ def text_to_speech(
     text_segments: list[dict],
     voice_id: int,
     project_id: str,
+    show_logs: bool = False
 ):
-    translated_audio_file_path = f"{project_id}-translated.mp3"
     try:
+        if show_logs:
+            print(f"(speech_to_text) Processing text segments to speech - {text_segments}")
+
+        translated_audio_file_path = f"{project_id}-translated.mp3"
         voice_from_config = get_voice_by_id(voice_id)
         original_voice_id = voice_from_config['original_id']
+        voice_provider = voice_from_config['provider']
         voice_language = voice_from_config['languages'][0]
 
-        if voice_from_config['provider'] == "eleven_labs":
+        if show_logs:
+            print(f"(text_to_speech) Voice provider for this project - {voice_provider}")
+
+        # Text to speech with 11labs
+        if voice_provider == "eleven_labs":
             generate_audio_with_elevenlabs_provider(
                 output_audio_file_path=translated_audio_file_path,
                 text_segments=text_segments,
                 original_voice_id=original_voice_id,
-                pause_duration_ms=AUDIO_SEGMENT_PAUSE
+                pause_duration_ms=AUDIO_SEGMENT_PAUSE_IN_MILLISECONDS,
+                show_logs=show_logs
             )
-        elif voice_from_config['provider'] == "azure":
+
+        # Text to speech with Microsoft
+        elif voice_provider == "azure":
             generate_audio_with_microsoft_provider(
                 output_audio_file_path=translated_audio_file_path,
                 text_segments=text_segments,
                 original_voice_id=original_voice_id,
                 language=voice_language,
-                pause_duration_ms=AUDIO_SEGMENT_PAUSE
+                pause_duration_ms=AUDIO_SEGMENT_PAUSE_IN_MILLISECONDS,
+                show_logs=show_logs,
             )
         else:
-            # TODO: raise Exception вызывает бесконечный цикл
+            # TODO: raise Exception calls infinite loop
             catch_error(
                 tag="text_to_speech",
                 error=incorrect_language_exception,
@@ -101,11 +79,20 @@ def text_to_speech(
             )
             raise incorrect_language_exception
 
-        add_audio_timestamps_to_segments(
-            audio_file_path=translated_audio_file_path,
-            text_segments=text_segments
-        )
         return translated_audio_file_path
+
+    except ConnectionResetError as cre:
+        print(f"(text_to_speech) ConnectionResetError: {str(cre)}")
+        # Try again because something went wrong
+        print(f"(text_to_speech) Something went wrong")
+        print(f"(text_to_speech) Wait {DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS} seconds to repeat...")
+        time.sleep(DELAY_FOR_UNKNOWN_ERRORS_IN_SECONDS)
+        print(f"(text_to_speech) Repeating...")
+        return text_to_speech(
+            text_segments=text_segments,
+            voice_id=voice_id,
+            project_id=project_id,
+        )
 
     except Exception as e:
         catch_error(
@@ -116,31 +103,50 @@ def text_to_speech(
         raise text_to_speech_exception
 
 
-# For local test
 if __name__ == "__main__":
     sample_text_segments = [
-        {'timestamp': [0.0, 2.28],
-         'text': 'Языковые модели сегодня все еще ограничены.'},
-        {'timestamp': [3.28, 5.04],
-         'text': 'Эта информация может быть устаревшей.'},
-        {'timestamp': [5.5, 5.9],
-         'text': 'Ура!'},
-        {'timestamp': [6.0, 15.0],
-         'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
+        {'original_timestamps': (0, 959), 'text': 'Я просыпаюсь утром'},
+        {'original_timestamps': (1156, 2656), 'text': 'и хочу достать свой телефон.'},
+        {'original_timestamps': (3379, 4686), 'text': 'Но я знаю, что даже если бы я'},
+        {'original_timestamps': (4868, 6667), 'text': 'увеличил яркость на экране телефона.'},
+        {'original_timestamps': (7137, 8161), 'text': 'Этого не будет достаточно.'},
+        {'original_timestamps': (8526, 10176), 'text': 'чтобы вызвать резкий подъем кортизола.'},
+        {'original_timestamps': (10314, 10844), 'text': 'и для меня.'},
+        {'original_timestamps': (11329, 11605), 'text': 'чтобы'},
+        {'original_timestamps': (11753, 12289), 'text': 'может быть.'},
+        {'original_timestamps': (12516, 18409),
+         'text': 'быть наиболее бодрым и сосредоточенным в течение дня и оптимизировать свой сон ночью. Так что я делаю так: я встаю с кровати.'},
+        {'original_timestamps': (18707, 19862), 'text': 'и выхожу на улицу.'},
+        {'original_timestamps': (20219, 20852), 'text': 'А если это.'},
+        {'original_timestamps': (21400, 21800), 'text': 'правильно?'},
+        {'original_timestamps': (21952, 22685), 'text': 'ясный день.'},
+        {'original_timestamps': (23332, 25872), 'text': 'и солнце низко в небе или солнце уже.'},
+        {'original_timestamps': (26078, 28440),
+         'text': 'начинает подниматься над горизонтом, то, как мы говорим, угол падения солнечного света мал.'},
+        {'original_timestamps': (28722, 29663), 'text': 'И я знаю, что я'},
+        {'original_timestamps': (30183, 31453), 'text': 'вышел на улицу в правильное время.'},
+        {'original_timestamps': (31741, 32804), 'text': 'Если небо в облаках.'},
+        {'original_timestamps': (32920, 34074), 'text': 'и я не вижу солнца.'}, {'original_timestamps': (34787, 41637),
+                                                                                 'text': 'Я также понимаю, что делаю правильное дело, потому что, оказывается, особенно в облачные дни, нужно выходить на улицу и получать как можно больше световой энергии или фотонов в глаза.'},
+        {'original_timestamps': (42425, 44105), 'text': 'Но предположим, что день очень ясный.'},
+        {'original_timestamps': (44315, 46013), 'text': 'и я вижу, где находится солнце.'},
+        {'original_timestamps': (46437, 48854), 'text': 'Мне не нужно смотреть прямо на солнце.'},
+        {'original_timestamps': (49252, 49530), 'text': 'Если оно'},
+        {'original_timestamps': (49911, 51078), 'text': 'Очень низко на горизонте.'},
+        {'original_timestamps': (51428, 55109),
+         'text': 'Я могу это сделать, потому что это не будет очень больно для моих глаз.'},
+        {'original_timestamps': (55491, 56752), 'text': 'солнце становится немного ярче.'}
     ]
-    voice_id = 559
+    # Voice for english Microsoft TTS tests
+    # voice_id = 260
+    # Voice for russian Microsoft TTS tests
+    voice_id = 165
+    # Voice for english 11labs TTS tests
+    # voice_id = 1242
     project_id = "07fsfECkwma6fVTDyqQf"
     text_to_speech(
         text_segments=sample_text_segments,
         voice_id=voice_id,
-        project_id=project_id
+        project_id=project_id,
+        show_logs=True
     )
-    print(sample_text_segments)
-
-    # for segment in sample_text_segments:
-    #     assert 'audio_timestamp' in segment, "Each segment should have an 'audio_timestamp' key."
-    #     assert isinstance(segment['audio_timestamp'], list), "'audio_timestamp' should be a list."
-    #     assert len(segment['audio_timestamp']) == 2, "'audio_timestamp' should have two values: start and end times."
-    #     assert segment['audio_timestamp'][0] < segment['audio_timestamp'][1], "Start time should be less than end time."
-    #
-    # print("All tests passed!")

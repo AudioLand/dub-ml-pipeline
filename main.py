@@ -7,7 +7,8 @@ from fastapi import FastAPI
 
 from config.logger import catch_error
 from get_file_type_by_suffix import get_file_type_by_suffix
-from overlay_audio import overlay_audio
+from nonsilent_audio_timestamps import get_nonsilent_audio_timestamps
+from overlay_audio import overlay_audio_to_video
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
 from text_to_speech import text_to_speech
@@ -38,28 +39,25 @@ def generate(
         # original_file_location for example = XYClUMP7wEPl8ktysClADpuaPIq2/4kIRz5B1JY0GAO1uj0dE/test-video-1min.mp4
         source_blob_name = original_file_location
 
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        print(f"[START] Job Started! Current Time: {current_time}")
+        start_time = datetime.now()
+        print(f"[START] Job Started! Current Time: {start_time}")
 
-        """0. Download video from cloud storage to local storage"""
+        """Download video from cloud storage to local storage"""
 
         print("[START] Downloading video from cloud storage...")
         # Extract extension from the original file location
         original_file_extension = Path(original_file_location).suffix
         # Combine project_id with the extracted extension
-        destination_local_file_name = f"{project_id}{original_file_extension}"
+        original_file_local_path = f"{project_id}{original_file_extension}"
         # FIXME: uncomment
         # download_blob(
         #     source_blob_name=source_blob_name,
-        #     destination_file_name=destination_local_file_name,
+        #     destination_file_name=original_file_local_path,
         #     project_id=project_id
         # )
         print("[DONE] Download completed.")
 
-        local_file_path = destination_local_file_name
-
-        """1. Change project status to "translating"""
+        """Change project status to "translating"""
 
         print("[START] Updating project status to 'translating'...")
         # FIXME: uncomment
@@ -70,58 +68,79 @@ def generate(
         # )
         print("[DONE] Project status updated.")
 
-        """2. Convert video to text"""
+        """Detect original video pauses and get nonsilent timestamps"""
 
-        print(f"[START] Speech to text, video_path - {local_file_path}")
-        original_text_segments, used_seconds_count = speech_to_text(
-            file_path=local_file_path,
-            project_id=project_id
+        print(f"[START] Detecting nonsilent audio timestamps from {original_file_local_path}")
+        original_audio_nonsilent_timestamps = get_nonsilent_audio_timestamps(
+            audio_file_path=original_file_local_path,
+            min_silence_len_ms=1000
         )
-        print(f"[DONE] Speech to text completed, original_text_segments - {original_text_segments}")
+        print(f"[DONE] Detecting nonsilent audio timestamps completed.")
 
-        """3. Translate text"""
+        """Convert original video speech to text"""
+
+        print(f"[START] Speech to text by timestamps for video - {original_file_local_path}")
+        original_text_segments_with_timestamps, used_seconds_count = speech_to_text(
+            original_file_path=original_file_local_path,
+            nonsilent_timestamps=original_audio_nonsilent_timestamps,
+            project_id=project_id,
+            show_logs=True
+        )
+        print(f"[DONE] Speech to text completed.")
+
+        """Translate text"""
 
         print("[START] Translating text ...")
         translated_text_segments = translate_text(
             language=target_language,
-            original_text_segments=original_text_segments,
+            original_text_segments=original_text_segments_with_timestamps,
             project_id=project_id,
             show_logs=True
         )
-        print(f"[DONE] Translation completed, translated_text_segments - {translated_text_segments}")
+        print(f"[DONE] Translation completed.")
 
-        """4. Detect gender of the voice"""
+        """Detect gender of the voice"""
 
         # gender = voice_gender_detection(video_path)
 
-        """5. Generate audio from translated text"""
+        """Generate audio from translated text"""
 
         print("[START] Text to speech ...")
         translated_audio_local_path = text_to_speech(
             text_segments=translated_text_segments,
             voice_id=voice_id,
             project_id=project_id,
+            show_logs=True
         )
-        print(f"[DONE] Text to speech completed, path to translated audio - {translated_audio_local_path}")
+        print(f"[DONE] Text to speech completed.")
 
-        processed_project_is_video = get_file_type_by_suffix(local_file_path) == "video"
+        # From translated video
+        print(f"[START] Detecting nonsilent audio timestamps from {translated_audio_local_path}")
+        translated_audio_nonsilent_timestamps = get_nonsilent_audio_timestamps(
+            audio_file_path=translated_audio_local_path,
+            min_silence_len_ms=2000
+        )
+        print(f"[DONE] Detecting nonsilent audio timestamps completed.")
+
+        processed_project_is_video = get_file_type_by_suffix(original_file_local_path) == "video"
         if processed_project_is_video:
             print("[START] Overlay audio to video ...")
             # Overlay audio on video
-            source_file_name = overlay_audio(
-                video_path=local_file_path,
-                audio_path=translated_audio_local_path,
-                text_segments=translated_text_segments,
+            final_file_path = overlay_audio_to_video(
+                original_video_path=original_file_local_path,
+                translated_audio_path=translated_audio_local_path,
+                original_text_segments_with_timestamps=original_text_segments_with_timestamps,
+                translated_nonsilent_timestamps=translated_audio_nonsilent_timestamps,
                 project_id=project_id,
                 silent_original_audio=False,
                 show_logs=True
             )
-            print(f"[DONE] Overlay audio completed")
+            print(f"[DONE] Overlay audio completed.")
         else:
             # TODO: create overlay for audio too.
-            source_file_name = translated_audio_local_path
+            final_file_path = translated_audio_local_path
 
-        """6. Upload audio to cloud storage"""
+        """Upload audio to cloud storage"""
 
         """
         Example
@@ -152,14 +171,14 @@ def generate(
 
         # Remove original file
         # FIXME: uncomment
-        # os.remove(destination_local_file_name)
+        # os.remove(local_file_path)
         # Remove translated file
-        # os.remove(source_file_name)
+        # os.remove(final_file_path)
         # Remove
         # if processed_project_is_video:
         #     os.remove(translated_audio_local_path)
 
-        """7. Change project status to "translated"""
+        """Change project status to "translated"""
 
         print("[START] Updating project status to 'translated'...")
         # FIXME: uncomment
@@ -170,6 +189,8 @@ def generate(
         # )
         print("[DONE] Project status updated.")
 
+        """Update user tokens"""
+
         print("[START] Updating user used tokens...")
         # FIXME: uncomment
         # update_user_tokens(
@@ -179,9 +200,10 @@ def generate(
         # )
         print("[START] User used tokens updated.")
 
-        now = datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        print(f"[DONE] Job Done! Current Time: {current_time}")
+        end_time = datetime.now()
+        print(f"[DONE] Job Done! Current Time: {end_time}")
+        time_difference = end_time - start_time
+        print(f"[DONE] Projects translation time {time_difference}")
 
         return {"status": "it is working!!!"}
 
@@ -203,7 +225,7 @@ if __name__ == "__main__":
     user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
     project_id = "07fsfECkwma6fVTDyqQf"
     target_language = "English"
-    voice_id = 1242
+    voice_id = 147
     original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
     organization_id = "ZXIFYVhPAMql66Vg5f5Q"
     generate(

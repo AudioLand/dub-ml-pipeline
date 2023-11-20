@@ -41,7 +41,7 @@ The text you need to translate to {language} language:
 
 def format_original_segments_to_special_str(original_text_segments: list[dict]) -> str:
     """
-    Transforms the given dictionary of timestamps and texts to the string, where segments are divided by ] symbol.
+    Transforms the given dictionary of timestamps and texts to the string, where segments are divided by [ and ] symbols.
 
     Parameters:
     - original_text_segments (list[dict]) - the list of dictionaries with text segments and timestamps.
@@ -150,7 +150,7 @@ def translate_text_chunks(language: str, text_chunks: list[str], project_id: str
 
 def translate_text(
     language: str,
-    original_text_segments: list,
+    original_text_segments: list[dict],
     project_id: str,
     show_logs: bool = False
 ) -> list[dict]:
@@ -159,15 +159,19 @@ def translate_text(
 
     Parameters:
     - language (str): The target language for translation.
-    - original_dictionary (list): The list of dictionaries with original text segments and timestamps.
+    - original_text_segments (list[dict]): The list of dictionaries with original text segments and timestamps.
     - project_id (str): The ID of the project.
 
     Returns:
     - list: The list of dictionaries with translated text segments and timestamps.
     """
 
-    formatted_segments_str = format_original_segments_to_special_str(original_text_segments)
     try:
+        if show_logs:
+            print(f"(translate_text) Translating original text segments - {original_text_segments}")
+
+        formatted_segments_str = format_original_segments_to_special_str(original_text_segments)
+
         if show_logs:
             print(f"(translate_text) Splitting text by {CONTEXT_TOKENS_COUNT} tokens...")
 
@@ -187,10 +191,10 @@ def translate_text(
             project_id=project_id
         )
         if show_logs:
-            print(f"(translate_text) Translating completed, translated_text_chunks - {translated_text_chunks}")
+            print(f"(translate_text) Translation completed, translated_text_chunks - {translated_text_chunks}")
 
         if show_logs:
-            print(f"(translate_text) Splitting translated chunks to segments by ] symbol...")
+            print(f"(translate_text) Splitting translated chunks to segments by [ and ] symbols...")
 
         # Split translated text to get original segments
         final_translated_text = "".join(translated_text_chunks)
@@ -207,15 +211,14 @@ def translate_text(
             print(f"Original count: {original_segments_count}")
             print(f"Translated count: {translated_segments_count}")
 
-            for i in range(min(original_segments_count, translated_segments_count)):
-                print(f"\nOriginal segment: {original_text_segments[i]}")
-                print(f"Translated segment: {translated_text_segments[i]}\n")
+            for segment_index in range(min(original_segments_count, translated_segments_count)):
+                print(f"\nOriginal segment: {original_text_segments[segment_index]}")
+                print(f"Translated segment: {translated_text_segments[segment_index]}\n")
 
             raise Exception(f"Segments count not match")
 
         for segment_index in range(len(translated_text_segments)):
             translated_segment = translated_text_segments[segment_index]
-            # original_text_segments[segment_index]['text'] = translated_segment[1: len(translated_segment)]
             original_text_segments[segment_index]['text'] = translated_segment
 
         return original_text_segments
@@ -229,46 +232,45 @@ def translate_text(
 
 
 if __name__ == "__main__":
-    # original_text_segments = [
-    #     {'timestamp': [0.0, 4.5], 'text': ' The next generation of Rayban meta smart glasses.'},
-    #     {'timestamp': [4.5, 14.52],
-    #      'text': ' These are the first smart glasses that are built in shipping with meta AI in them.'},
-    #     {'timestamp': [14.52, 23.5],
-    #      'text': " Starting in the US, you're going to get this state of the art AI that you can interact with, hands free, wherever you go."},
-    #     {'timestamp': [23.5, 26.0], 'text': " We're going to be issuing a free software update"},
-    #     {'timestamp': [26.0, 27.8], 'text': ' to the glasses that makes them multimodal.'}
-    # ]
-    original_text_segments = [
-        {'timestamp': [0.0, 4.52],
-         'text': ' I wake up in the morning and I want to reach for my phone, but I know that even if I were'},
-        {'timestamp': [4.52, 9.8],
-         'text': " to crank up the brightness on that phone screen, it's not bright enough to trigger that cortisol"},
-        {'timestamp': [9.8, 15.42],
-         'text': ' spike and for me to be at my most alert and focus throughout the day and to optimize my'},
-        {'timestamp': [15.42, 16.42], 'text': ' sleep at night.'},
-        {'timestamp': [16.42, 23.76],
-         'text': " So what I do is I get out of bed and I go outside and if it's a bright clear day and the"},
-        {'timestamp': [23.76, 26.08], 'text': ' sun is low in the sky, or the sun is,'},
-        {'timestamp': [26.08, 27.2], 'text': ' you know, starting to get overhead,'},
-        {'timestamp': [27.2, 28.72], 'text': ' what we call low solar angle,'},
-        {'timestamp': [28.72, 31.76], 'text': " and I know I'm getting outside at the right time."},
-        {'timestamp': [31.76, 34.8], 'text': " If there's cloud cover, and I can't see the sun,"},
-        {'timestamp': [34.8, 36.4], 'text': " I also know I'm doing a good thing"},
-        {'timestamp': [36.4, 38.56], 'text': ' because it turns out, especially on cloudy days,'},
-        {'timestamp': [38.56, 40.64], 'text': ' you want to get outside and get as much light energy'},
-        {'timestamp': [40.64, 42.4], 'text': ' or photons in your eyes.'},
-        {'timestamp': [42.4, 44.32], 'text': " But let's say it's a very clear day,"},
-        {'timestamp': [44.32, 45.36], 'text': ' and I can see where the'},
-        {'timestamp': [45.36, 52.08],
-         'text': " sun is. I do not need to stare directly into the sun. If it's very low in the sky, I might do that"},
-        {'timestamp': [52.08, 56.48],
-         'text': " because it's not going to be very painful to my eyes. However, if the sun is a little bit brighter,"}
+    sample_original_text_segments = [
+        {'original_timestamps': (0, 959), 'text': ' I wake up in the morning'},
+        {'original_timestamps': (1156, 2656), 'text': ' and I want to reach for my phone.'},
+        {'original_timestamps': (3379, 4686), 'text': ' But I know that even if I were to'},
+        {'original_timestamps': (4868, 6667), 'text': ' crank up the brightness on that phone screen.'},
+        {'original_timestamps': (7137, 8161), 'text': " It's not bright enough."},
+        {'original_timestamps': (8526, 10176), 'text': ' to trigger that cortisol spike.'},
+        {'original_timestamps': (10314, 10844), 'text': ' and for me.'},
+        {'original_timestamps': (11329, 11605), 'text': ' to'},
+        {'original_timestamps': (11753, 12289), 'text': ' be it might.'},
+        {'original_timestamps': (12516, 18409),
+         'text': ' most alert and focused throughout the day and to optimize my sleep at night. So what I do is I get out of bed.'},
+        {'original_timestamps': (18707, 19862), 'text': ' and I go outside.'},
+        {'original_timestamps': (20219, 20852), 'text': " And if it's a."},
+        {'original_timestamps': (21400, 21800), 'text': ' right?'},
+        {'original_timestamps': (21952, 22685), 'text': ' clear day.'},
+        {'original_timestamps': (23332, 25872), 'text': ' and the sun is low in the sky or the sun is.'},
+        {'original_timestamps': (26078, 28440),
+         'text': ' you know, starting to get overhead, what we call low solar angle.'},
+        {'original_timestamps': (28722, 29663), 'text': " And I know I'm"},
+        {'original_timestamps': (30183, 31453), 'text': ' getting outside at the right time.'},
+        {'original_timestamps': (31741, 32804), 'text': " If there's cloud cover."},
+        {'original_timestamps': (32920, 34074), 'text': " and I can't see the sun."},
+        {'original_timestamps': (34787, 41637),
+         'text': " I also know I'm doing a good thing because it turns out, especially on cloudy days, you want to get outside and get as much light energy or photons in your eyes."},
+        {'original_timestamps': (42425, 44105), 'text': " But let's say it's a very clear day."},
+        {'original_timestamps': (44315, 46013), 'text': ' and I can see where the sun is.'},
+        {'original_timestamps': (46437, 48854), 'text': ' I do not need to stare directly into the sun.'},
+        {'original_timestamps': (49252, 49530), 'text': " If it's"},
+        {'original_timestamps': (49911, 51078), 'text': ' Very low in the sky.'},
+        {'original_timestamps': (51428, 55109),
+         'text': " I might do that because it's not going to be very painful to my eyes."},
+        {'original_timestamps': (55491, 56752), 'text': ' sun is a little bit brighter.'}
     ]
     target_language = "Russian"
     project_id = "07fsfECkwma6fVTDyqQf"
-    print(f"\nOriginal text segments - {original_text_segments}")
     translated_text = translate_text(
         language=target_language,
-        original_text_segments=original_text_segments,
+        original_text_segments=sample_original_text_segments,
         project_id=project_id
     )
+    print(translated_text)
