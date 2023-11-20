@@ -196,16 +196,16 @@ def health_check():
 
 if __name__ == "__main__":
     print("main started")
-    user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
-    project_id = "07fsfECkwma6fVTDyqQf"
-    target_language = "Russian"
-    voice_id = 165
-    original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
-    organization_id = "ZXIFYVhPAMql66Vg5f5Q"
-    generate(
-        project_id=project_id,
-        target_language=target_language,
-        voice_id=voice_id,
-        original_file_location=original_file_location,
-        organization_id=organization_id
-    )
+    # user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
+    # project_id = "07fsfECkwma6fVTDyqQf"
+    # target_language = "Russian"
+    # voice_id = 165
+    # original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
+    # organization_id = "ZXIFYVhPAMql66Vg5f5Q"
+    # generate(
+    #     project_id=project_id,
+    #     target_language=target_language,
+    #     voice_id=voice_id,
+    #     original_file_location=original_file_location,
+    #     organization_id=organization_id
+    # )
