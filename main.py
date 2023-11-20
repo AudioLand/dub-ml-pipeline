@@ -1,5 +1,5 @@
-# Local imports
 # from integrations.youtube_utils import youtube_download
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -7,6 +7,9 @@ from fastapi import FastAPI
 
 from config.logger import catch_error
 from get_file_type_by_suffix import get_file_type_by_suffix
+from integrations.firebase.firestore_update_project import update_project_status_and_translated_link_by_id
+from integrations.firebase.firestore_update_user_tokens import update_user_tokens
+from integrations.firebase.google_cloud_storage import upload_blob, download_blob
 from overlay_audio import overlay_audio
 from speech_to_text import speech_to_text
 # from gender_detection import voice_gender_detection
@@ -49,12 +52,11 @@ def generate(
         original_file_extension = Path(original_file_location).suffix
         # Combine project_id with the extracted extension
         destination_local_file_name = f"{project_id}{original_file_extension}"
-        # FIXME: uncomment
-        # download_blob(
-        #     source_blob_name=source_blob_name,
-        #     destination_file_name=destination_local_file_name,
-        #     project_id=project_id
-        # )
+        download_blob(
+            source_blob_name=source_blob_name,
+            destination_file_name=destination_local_file_name,
+            project_id=project_id
+        )
         print("[DONE] Download completed.")
 
         local_file_path = destination_local_file_name
@@ -62,12 +64,11 @@ def generate(
         """1. Change project status to "translating"""
 
         print("[START] Updating project status to 'translating'...")
-        # FIXME: uncomment
-        # update_project_status_and_translated_link_by_id(
-        #     project_id=project_id,
-        #     status="translating",
-        #     translated_file_link=""
-        # )
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translating",
+            translated_file_link=""
+        )
         print("[DONE] Project status updated.")
 
         """2. Convert video to text"""
@@ -140,43 +141,38 @@ def generate(
         destination_blob_name = f"{original_path}/{original_filename_without_extension}-translated{original_file_extension}"
 
         print("[START] Uploading translated file to cloud storage ...")
-        # FIXME: uncomment
-        # file_public_link = upload_blob(
-        #     source_file_name=source_file_name,
-        #     destination_blob_name=destination_blob_name,
-        #     project_id=project_id
-        # )
+        file_public_link = upload_blob(
+            source_file_name=source_file_name,
+            destination_blob_name=destination_blob_name,
+            project_id=project_id
+        )
         print(f"[DONE] File uploaded to cloud storage, destination_blob_name - {destination_blob_name}")
 
         """Remove all processed files"""
 
         # Remove original file
-        # FIXME: uncomment
-        # os.remove(destination_local_file_name)
+        os.remove(destination_local_file_name)
         # Remove translated file
-        # os.remove(source_file_name)
-        # Remove
-        # if processed_project_is_video:
-        #     os.remove(translated_audio_local_path)
+        os.remove(source_file_name)
+        if processed_project_is_video:
+            os.remove(translated_audio_local_path)
 
         """7. Change project status to "translated"""
 
         print("[START] Updating project status to 'translated'...")
-        # FIXME: uncomment
-        # update_project_status_and_translated_link_by_id(
-        #     project_id=project_id,
-        #     status="translated",
-        #     translated_file_link=file_public_link
-        # )
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status="translated",
+            translated_file_link=file_public_link
+        )
         print("[DONE] Project status updated.")
 
         print("[START] Updating user used tokens...")
-        # FIXME: uncomment
-        # update_user_tokens(
-        #     organization_id=organization_id,
-        #     tokens_in_seconds=used_seconds_count,
-        #     project_id=project_id,
-        # )
+        update_user_tokens(
+            organization_id=organization_id,
+            tokens_in_seconds=used_seconds_count,
+            project_id=project_id,
+        )
         print("[START] User used tokens updated.")
 
         now = datetime.now()
@@ -202,8 +198,8 @@ if __name__ == "__main__":
     print("main started")
     user_id = "z8Z5j71WbmhaioUHDHh5KrBqEO13"
     project_id = "07fsfECkwma6fVTDyqQf"
-    target_language = "English"
-    voice_id = 1242
+    target_language = "Russian"
+    voice_id = 165
     original_file_location = f"{user_id}/{project_id}/test-video-1min.mp4"
     organization_id = "ZXIFYVhPAMql66Vg5f5Q"
     generate(
