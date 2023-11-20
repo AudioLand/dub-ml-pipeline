@@ -1,9 +1,9 @@
 import json
 import os
 
-import openai
 from dotenv import load_dotenv
 
+# Env variables
 load_dotenv()
 
 # Environment
@@ -29,5 +29,6 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 # Sentry
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 
-# Set OpenAI API key
-openai.api_key = OPEN_AI_API_KEY
+# Microsoft
+SPEECH_KEY = os.getenv("SPEECH_KEY")
+SPEECH_REGION = os.getenv("SPEECH_REGION")

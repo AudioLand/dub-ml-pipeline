@@ -1,57 +1,111 @@
-import time
+from pydub import AudioSegment
+from pydub.silence import detect_nonsilent
 
-from elevenlabs import APIError, generate, set_api_key, voices, RateLimitError
-from moviepy.audio.io.AudioFileClip import AudioFileClip
-
-from config.config import ELEVEN_LABS_API_KEY
 from config.logger import catch_error
-from split_text import MAX_SYMBOLS_NUMBER
-from split_text import split_text
-
-set_api_key(ELEVEN_LABS_API_KEY)
-
-VOICE_MAPPING = {
-    "female": '21m00Tcm4TlvDq8ikWAM',
-    "male": 'TxGEqnHWrfWFTfGW9XjX'
-}
-
-ELEVENLABS_VOICES_IDS = list(map(lambda voice: voice.voice_id, voices()))
+from config.tts_config import tts_config
+from elevenlabs_provider import generate_audio_with_elevenlabs_provider
+from microsoft_provider import generate_audio_with_microsoft_provider
 
 text_to_speech_exception = Exception(
     "Error while processing text to speech"
 )
 
+incorrect_language_exception = Exception('Incorrect language')
+
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 
+AUDIO_SEGMENT_PAUSE = 3000  # 3 sec
 
-# TODO: fix text_segments type (it's not str, it's dict)
-def text_to_speech(text_segments: str, project_id: str, voice_id: str = None, detected_gender: str = None):
+
+def add_audio_timestamps_to_segments(
+    audio_file_path: str,
+    text_segments: list[dict],
+    min_silence_len=2000,
+    silence_thresh=-30,
+    padding=500
+):
+    """
+    Detects pauses in an audio file and adds audio_timestamps to segments.
+
+    :param audio_file_path: Path to the audio file.
+    :param text_segments: A list of text segments with 'timestamp' and 'text' keys.
+    :param min_silence_len: Minimum length of silence to consider as a pause in milliseconds.
+    :param silence_thresh: Silence threshold in dB.
+    :param padding: Additional time in milliseconds to add to the end of each segment.
+    :return: A list of tuples where each tuple is (start, end) time of pauses.
+    """
+    audio = AudioSegment.from_file(audio_file_path)
+    speak_times = detect_nonsilent(
+        audio_segment=audio,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh
+    )
+    adjusted_speak_times = [(max(start - padding, 0), min(end + padding, len(audio))) for start, end in speak_times]
+    for segment, (start, end) in zip(text_segments, adjusted_speak_times):
+        segment['audio_timestamp'] = [start, end]
+
+    # Check the time difference between the end of one segment and the start of the next
+    # for i in range(len(adjusted_speak_times) - 1):
+    #     end_of_current = adjusted_speak_times[i][1]
+    #     start_of_next = adjusted_speak_times[i + 1][0]
+    #     time_diff = start_of_next - end_of_current
+    #     if abs(time_diff - 3000) > 100:  # Allowing a 100ms deviation
+    #         print(f'Time gap discrepancy between segments {i} and {i + 1}: {time_diff}ms')
+
+
+def get_voice_by_id(voice_id: int):
+    """
+    Return voice from tts-config by specified voice_id
+
+    :param voice_id: Target voice id
+
+    :returns: Voice object from tts-config
+    """
+    for voice_from_config in tts_config:
+        if voice_from_config['voice_id'] == voice_id:
+            return voice_from_config
+
+
+def text_to_speech(
+    text_segments: list[dict],
+    voice_id: int,
+    project_id: str,
+):
+    translated_audio_file_path = f"{project_id}-translated.mp3"
     try:
-        if voice_id is None or voice_id not in ELEVENLABS_VOICES_IDS:
-            # Default to "Josh" if gender is not recognized
-            voice_id = VOICE_MAPPING.get(detected_gender, 'TxGEqnHWrfWFTfGW9XjX')
-        translated_audio_file_name = f"translated-{project_id}.mp3"
+        voice_from_config = get_voice_by_id(voice_id)
+        original_voice_id = voice_from_config['original_id']
+        voice_language = voice_from_config['languages'][0]
 
-        open(translated_audio_file_name, mode='w').close()
-        prev_moment = 0.0
+        if voice_from_config['provider'] == "eleven_labs":
+            generate_audio_with_elevenlabs_provider(
+                output_audio_file_path=translated_audio_file_path,
+                text_segments=text_segments,
+                original_voice_id=original_voice_id,
+                pause_duration_ms=AUDIO_SEGMENT_PAUSE
+            )
+        elif voice_from_config['provider'] == "azure":
+            generate_audio_with_microsoft_provider(
+                output_audio_file_path=translated_audio_file_path,
+                text_segments=text_segments,
+                original_voice_id=original_voice_id,
+                language=voice_language,
+                pause_duration_ms=AUDIO_SEGMENT_PAUSE
+            )
+        else:
+            # TODO: raise Exception вызывает бесконечный цикл
+            catch_error(
+                tag="text_to_speech",
+                error=incorrect_language_exception,
+                project_id=project_id
+            )
+            raise incorrect_language_exception
 
-        for segment in text_segments:
-            # Recording start moment in the audio for the segment.
-            segment['audio_timestamp'] = [prev_moment]
-            text = segment['text']
-
-            if len(text) > MAX_SYMBOLS_NUMBER:
-                chunks = split_text(text)
-                for chunk in chunks:
-                    create_sound(chunk, voice_id, translated_audio_file_name)
-            else:
-                create_sound(text, voice_id, translated_audio_file_name)
-
-            # Recording end moment in the audio for the segment.
-            prev_moment = AudioFileClip(str(translated_audio_file_name)).duration
-            segment['audio_timestamp'].append(prev_moment)
-
-        return translated_audio_file_name
+        add_audio_timestamps_to_segments(
+            audio_file_path=translated_audio_file_path,
+            text_segments=text_segments
+        )
+        return translated_audio_file_path
 
     except Exception as e:
         catch_error(
@@ -62,50 +116,23 @@ def text_to_speech(text_segments: str, project_id: str, voice_id: str = None, de
         raise text_to_speech_exception
 
 
-def create_sound(text: str, voice: str, translated_audio_file_name: str):
-    try:
-        audio = generate(
-            text=text,
-            voice=voice,
-            model="eleven_multilingual_v2"
-        )
-
-        with open(translated_audio_file_name, 'ab+') as f:
-            f.write(audio)
-
-    except APIError as error:
-        print("[text_to_speech] API Error:", str(error))
-
-        # If too many requests to 11labs, wait and then try again
-        if isinstance(error, RateLimitError):
-            print(f"Wait {DELAY_TO_WAIT_IN_SECONDS} seconds and then repeat request to 11labs...")
-            time.sleep(DELAY_TO_WAIT_IN_SECONDS)
-            return create_sound(text, voice, translated_audio_file_name)
-        raise text_to_speech_exception
-
-
+# For local test
 if __name__ == "__main__":
     sample_text_segments = [
         {'timestamp': [0.0, 2.28],
-         'text': 'Language models today, while useful for a variety of tasks, are still limited. The only information they can learn from is their training data.'},
+         'text': 'Языковые модели сегодня все еще ограничены.'},
         {'timestamp': [3.28, 5.04],
-         'text': 'This information can be out-of-date and is one-size fits all across applications. Furthermore, the only thing language models can do out-of-the-box is emit text.'},
+         'text': 'Эта информация может быть устаревшей.'},
+        {'timestamp': [5.5, 5.9],
+         'text': 'Ура!'},
         {'timestamp': [6.0, 15.0],
-         'text': 'This text can contain useful instructions, but to actually follow these instructions you need another process.'}
+         'text': 'Этот текст может содержать полезные инструкции, но чтобы действительно ...'}
     ]
-
-    project_id_sample = "sample_project_id"
-    detected_gender_sample = "male"
-
-    path = text_to_speech(sample_text_segments, project_id_sample, detected_gender_sample)
-    print(f'path: {path}\n Modified_text_segments: {sample_text_segments}')
-
-    assert isinstance(sample_text_segments, list), "Output should be a list."
-
-    for segment in sample_text_segments:
-        assert 'audio_timestamp' in segment, "Each segment should have an 'audio_timestamp' key."
-        assert isinstance(segment['audio_timestamp'], list), "'audio_timestamp' should be a list."
-        assert len(segment['audio_timestamp']) == 2, "'audio_timestamp' should have two values: start and end times."
-        assert segment['audio_timestamp'][0] < segment['audio_timestamp'][1], "Start time should be less than end time."
-
-    print("All tests passed!")
+    voice_id = 559
+    project_id = "07fsfECkwma6fVTDyqQf"
+    text_to_speech(
+        text_segments=sample_text_segments,
+        voice_id=voice_id,
+        project_id=project_id
+    )
+    print(sample_text_segments)
