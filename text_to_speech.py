@@ -20,9 +20,9 @@ AUDIO_SEGMENT_PAUSE = 3000  # 3 sec
 def add_audio_timestamps_to_segments(
     audio_file_path: str,
     text_segments: list[dict],
-    min_silence_len=500,
+    min_silence_len=2000,
     silence_thresh=-30,
-    padding=300
+    padding=500
 ):
     """
     Detects pauses in an audio file and adds audio_timestamps to segments.
@@ -136,11 +136,3 @@ if __name__ == "__main__":
         project_id=project_id
     )
     print(sample_text_segments)
-
-    # for segment in sample_text_segments:
-    #     assert 'audio_timestamp' in segment, "Each segment should have an 'audio_timestamp' key."
-    #     assert isinstance(segment['audio_timestamp'], list), "'audio_timestamp' should be a list."
-    #     assert len(segment['audio_timestamp']) == 2, "'audio_timestamp' should have two values: start and end times."
-    #     assert segment['audio_timestamp'][0] < segment['audio_timestamp'][1], "Start time should be less than end time."
-    #
-    # print("All tests passed!")
