@@ -1,3 +1,5 @@
+IMAGE_NAME=audioland-pipeline:dev
+
 mac/init:
 	brew install flyctl
 
@@ -9,3 +11,9 @@ install:
 
 run:
 	uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+
+docker-build:
+	docker build -t $(IMAGE_NAME) .
+
+docker-run:
+	docker run --rm -it --env-file .env -p 8080:8080 -v ${CURDIR}/src:/app/src $(IMAGE_NAME)

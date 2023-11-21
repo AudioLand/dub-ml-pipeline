@@ -1,8 +1,10 @@
-.idea
-venv/
+# IDEs dirs
+.idea/
 .vscode/
+
+# Python dirs
 __pycache__/
+venv/
 
-audioland-dub-firebase-adminsdk-xfwtj-4228d1d618.json
-
+# Environment
 .env
