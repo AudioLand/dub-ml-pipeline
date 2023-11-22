@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Environment
-IS_DEV_ENVIRONMENT = os.getenv("ENVIRONMENT") == "development"
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+IS_DEV_ENVIRONMENT = ENVIRONMENT == "development"
 
 # APIs
 OPEN_AI_API_KEY = os.getenv("OPEN_AI_API_KEY")
