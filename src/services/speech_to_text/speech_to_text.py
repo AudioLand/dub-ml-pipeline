@@ -53,7 +53,11 @@ def speech_to_text(file_path: str, project_id: str, show_logs: bool = False) -> 
                 continue
 
             # Use a temporary file to avoid overwriting conflicts
-            with tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_file:
+            with tempfile.NamedTemporaryFile(
+                dir=PROCESSING_FILES_DIR_PATH,
+                suffix=".wav",
+                delete=True
+            ) as temp_file:
                 current_segment.export(temp_file.name, format="wav")
 
                 # Use OpenAI's Whisper ASR to transcribe
