@@ -9,7 +9,7 @@ from constants.files import PROCESSING_FILES_DIR_PATH
 from constants.log_tags import LogTag
 from models.text_segment import TextSegment
 from services.speech_to_text.whisper_endpoint import send_request_to_whisper_endpoint
-from src.configs.logger import catch_error, print_info_log
+from configs.logger import catch_error, print_info_log
 
 MINIMUM_AUDIO_LENGTH_MS = 100  # 0.1 seconds in milliseconds
 

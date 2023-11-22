@@ -2,8 +2,8 @@ from datetime import datetime
 
 import requests
 
-from src.configs.env import STRIPE_SECRET_KEY
-from src.configs.logger import catch_error
+from configs.env import STRIPE_SECRET_KEY
+from configs.logger import catch_error
 
 stripe_api_exception = Exception("Error while sending usage record to Stripe API")
 

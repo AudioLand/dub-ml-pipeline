@@ -7,7 +7,7 @@ from pydub import AudioSegment
 from constants.files import VIDEO_SUPPORTED_EXTENSIONS, AUDIO_SUPPORTED_EXTENSIONS, PROCESSING_FILES_DIR_PATH
 from constants.log_tags import LogTag
 from models.text_segment import TextSegmentWithAudioTimestamp
-from src.configs.logger import catch_error, print_info_log
+from configs.logger import catch_error, print_info_log
 from utils.files import get_file_extension, get_file_name
 
 

@@ -1,7 +1,7 @@
 import requests
 
-from src.configs.env import GENDER_DETECTION_API_URL, GENDER_DETECTION_BEARER_TOKEN
-from src.configs.logger import catch_error
+from configs.env import GENDER_DETECTION_API_URL, GENDER_DETECTION_BEARER_TOKEN
+from configs.logger import catch_error
 
 headers = {
     "Authorization": f"Bearer {GENDER_DETECTION_BEARER_TOKEN}"

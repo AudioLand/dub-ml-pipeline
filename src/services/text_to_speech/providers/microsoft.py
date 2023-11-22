@@ -6,7 +6,7 @@ from azure.cognitiveservices.speech.audio import AudioOutputConfig
 from configs.logger import catch_error, print_info_log
 from constants.log_tags import LogTag
 from models.text_segment import TextSegment
-from src.configs.env import SPEECH_REGION, SPEECH_KEY
+from configs.env import SPEECH_REGION, SPEECH_KEY
 
 # This example requires environment variables named "SPEECH_KEY" and "SPEECH_REGION"
 speech_config = SpeechConfig(

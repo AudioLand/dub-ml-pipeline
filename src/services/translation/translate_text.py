@@ -6,7 +6,7 @@ from models.text_segment import TextSegment
 from services.translation.combine_text_segments import combine_text_segments
 from services.translation.split_text_to_chunks import split_text_to_chunks
 from services.translation.translate_text_chunk_with_gpt import translate_text_chunk_with_gpt
-from src.configs.logger import catch_error, print_info_log
+from configs.logger import catch_error, print_info_log
 
 
 def translate_text(

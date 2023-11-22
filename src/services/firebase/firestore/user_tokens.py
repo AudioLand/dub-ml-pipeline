@@ -3,8 +3,8 @@ from datetime import datetime
 import requests
 
 from constants.log_tags import LogTag
-from src.configs.env import UPDATE_USER_TOKENS_URL
-from src.configs.logger import catch_error, print_info_log
+from configs.env import UPDATE_USER_TOKENS_URL
+from configs.logger import catch_error, print_info_log
 
 
 def update_user_tokens(

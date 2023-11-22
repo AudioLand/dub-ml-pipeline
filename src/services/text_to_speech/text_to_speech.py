@@ -9,8 +9,8 @@ from services.text_to_speech.providers.elevenlabs import generate_audio_with_ele
 from services.text_to_speech.providers.microsoft import generate_audio_with_microsoft_provider
 from models.text_segment import TextSegment, TextSegmentWithAudioTimestamp
 from models.voice_provider import VoiceProvider
-from src.configs.logger import catch_error, print_info_log
-from src.configs.tts_config import tts_config
+from configs.logger import catch_error, print_info_log
+from configs.tts_config import tts_config
 
 DELAY_TO_WAIT_IN_SECONDS = 5 * 60
 

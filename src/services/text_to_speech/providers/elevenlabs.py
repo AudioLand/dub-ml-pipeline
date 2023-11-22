@@ -6,7 +6,7 @@ from elevenlabs import APIError, generate as generate_audio, set_api_key, RateLi
 from configs.logger import print_info_log, catch_error
 from constants.log_tags import LogTag
 from models.text_segment import TextSegment
-from src.configs.env import ELEVEN_LABS_API_KEY
+from configs.env import ELEVEN_LABS_API_KEY
 
 set_api_key(ELEVEN_LABS_API_KEY)
 

@@ -1,7 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials
 
-from src.configs.env import CERTIFICATE_CONTENT
+from configs.env import CERTIFICATE_CONTENT
 
 
 def init_firebase():

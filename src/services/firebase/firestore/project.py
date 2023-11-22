@@ -4,7 +4,7 @@ import requests
 
 from configs.logger import print_info_log
 from constants.log_tags import LogTag
-from src.configs.env import UPDATE_PROJECT_URL
+from configs.env import UPDATE_PROJECT_URL
 
 
 def update_project_status_and_translated_link_by_id(
