@@ -3,6 +3,7 @@ import logging
 import sentry_sdk
 
 from constants.log_tags import LogTag
+from models.project import ProjectStatus
 from services.sentry.init_sentry import init_sentry
 
 init_sentry()
@@ -29,7 +30,7 @@ def catch_error(tag: LogTag, error: Exception, project_id: str | None = None):
     if project_id is not None:
         update_project_status_and_translated_link_by_id(
             project_id=project_id,
-            status="translationError",
+            status=ProjectStatus.TRANSLATION_ERROR.value,
             translated_file_link=""
         )
 

@@ -7,17 +7,21 @@ from configs.logger import print_info_log, catch_error
 from constants.files import PROCESSING_FILES_DIR_PATH
 from constants.log_tags import LogTag
 from models.file_type import FileType
+from models.project import ProjectStatus
+from services.firebase.firestore.project import update_project_status_and_translated_link_by_id
+from services.firebase.firestore.user_tokens import update_user_tokens
 from services.firebase.storage.download_blob import download_blob
+from services.firebase.storage.upload_blob import upload_blob
 from services.overlay.overlay_audio_to_video import overlay_audio_to_video
 from services.speech_to_text.speech_to_text import speech_to_text
 from services.text_to_speech.text_to_speech import text_to_speech
 from services.translation.translate_text import translate_text
 from utils.files import get_file_extension, get_file_type, get_file_dir, get_file_name
 
-router = APIRouter(tags=["DUB"])
+dub_router = APIRouter(tags=["DUB"])
 
 
-@router.get("/")
+@dub_router.get("/")
 def generate(
     project_id: str,
     target_language: str,
@@ -87,12 +91,12 @@ def generate(
             message="Updating project status to 'translating'..."
         )
 
-        # update_project_status_and_translated_link_by_id(
-        #     project_id=project_id,
-        #     status="translating",
-        #     translated_file_link="",
-        #     show_logs=True
-        # )
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status=ProjectStatus.TRANSLATING.value,
+            translated_file_link="",
+            show_logs=True
+        )
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -202,12 +206,12 @@ def generate(
             message="Uploading translated file to cloud storage..."
         )
 
-        # file_public_link = upload_blob(
-        #     source_file_name=local_translated_file_path,
-        #     destination_blob_name=destination_blob_name,
-        #     project_id=project_id,
-        #     show_logs=True
-        # )
+        file_public_link = upload_blob(
+            source_file_name=local_translated_file_path,
+            destination_blob_name=destination_blob_name,
+            project_id=project_id,
+            show_logs=True
+        )
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -221,14 +225,14 @@ def generate(
             message="Removing all project processed files..."
         )
 
-        # # Remove original file
-        # os.remove(local_original_file_path)
-        # # Remove translated file
-        # if processed_project_is_video:
-        #     os.remove(local_translated_file_path)
-        #     os.remove(local_translated_audio_path)
-        # else:
-        #     os.remove(local_translated_file_path)
+        # Remove original file
+        os.remove(local_original_file_path)
+        # Remove translated file
+        if processed_project_is_video:
+            os.remove(local_translated_file_path)
+            os.remove(local_translated_audio_path)
+        else:
+            os.remove(local_translated_file_path)
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -242,12 +246,12 @@ def generate(
             message="Updating project status to 'translated'..."
         )
 
-        # update_project_status_and_translated_link_by_id(
-        #     project_id=project_id,
-        #     status="translated",
-        #     translated_file_link=file_public_link,
-        #     show_logs=True
-        # )
+        update_project_status_and_translated_link_by_id(
+            project_id=project_id,
+            status=ProjectStatus.TRANSLATED.value,
+            translated_file_link=file_public_link,
+            show_logs=True
+        )
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -261,11 +265,11 @@ def generate(
             message="Updating user used tokens..."
         )
 
-        # update_user_tokens(
-        #     organization_id=organization_id,
-        #     tokens_in_seconds=used_tokens_in_seconds,
-        #     project_id=project_id
-        # )
+        update_user_tokens(
+            organization_id=organization_id,
+            tokens_in_seconds=used_tokens_in_seconds,
+            project_id=project_id
+        )
 
         print_info_log(
             tag=LogTag.MAIN,
