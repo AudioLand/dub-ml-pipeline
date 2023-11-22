@@ -8,3 +8,6 @@ venv/
 
 # Environment
 .env
+
+# Temporary files dir
+tmp/
