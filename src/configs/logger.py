@@ -3,7 +3,9 @@ import logging
 import sentry_sdk
 
 from constants.log_tags import LogTag
+from models.emailTemplates import EmailTemplate
 from models.project import ProjectStatus
+from services.emails.send_email_with_api import send_email_with_api
 from services.sentry.init_sentry import init_sentry
 
 init_sentry()
@@ -12,7 +14,12 @@ ERROR_MESSAGE_FORMAT = "[%(asctime)s] ERROR - %(levelname)s: %(message)s"
 INFO_MESSAGE_FORMAT = "[%(asctime)s] INFO - %(message)s"
 
 
-def catch_error(tag: LogTag, error: Exception, project_id: str | None = None):
+def catch_error(
+    tag: LogTag,
+    error: Exception,
+    project_id: str | None = None,
+    user_email: str | None = None
+):
     # DO NOT MOVE THIS IMPORT unless error :)
     # TODO: write what error raises if import not here but in top of this file
     from services.firebase.firestore.project import update_project_status_and_translated_link_by_id
@@ -33,6 +40,12 @@ def catch_error(tag: LogTag, error: Exception, project_id: str | None = None):
             status=ProjectStatus.TRANSLATION_ERROR.value,
             translated_file_link=""
         )
+        # Send email to user about project error
+        if user_email is not None:
+            send_email_with_api(
+                user_email=user_email,
+                email_template=EmailTemplate.ProjectError.value
+            )
 
     raise error
 
