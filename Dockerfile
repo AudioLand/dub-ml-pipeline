@@ -2,7 +2,7 @@ FROM python:3.10-slim-bullseye
 
 ENV PYTHONUNBUFFERED 1
 WORKDIR /app
-COPY . ./
+COPY . /app
 
 RUN apt-get -y update
 RUN apt-get install --no-install-recommends -y ffmpeg
