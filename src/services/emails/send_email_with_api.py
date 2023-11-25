@@ -1,6 +1,6 @@
 import requests
 
-from constants.emails import SEND_EMAIL_API_URL
+from configs.env import SEND_EMAIL_URL
 from models.emailTemplates import EmailTemplate
 
 
@@ -15,7 +15,7 @@ def send_email_with_api(user_email: str, email_template: EmailTemplate):
         "emailTemplate": email_template.value,
     }
 
-    response = requests.post(SEND_EMAIL_API_URL, headers=headers, json=payload)
+    response = requests.post(SEND_EMAIL_URL, headers=headers, json=payload)
 
     if not response.ok:
         raise Exception(
