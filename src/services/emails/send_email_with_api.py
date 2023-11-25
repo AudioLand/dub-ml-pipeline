@@ -12,7 +12,7 @@ def send_email_with_api(user_email: str, email_template: EmailTemplate):
 
     payload = {
         "userEmail": user_email,
-        "emailTemplate": email_template,
+        "emailTemplate": email_template.value,
     }
 
     response = requests.post(SEND_EMAIL_API_URL, headers=headers, json=payload)

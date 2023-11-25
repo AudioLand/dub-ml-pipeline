@@ -44,7 +44,7 @@ def catch_error(
         if user_email is not None:
             send_email_with_api(
                 user_email=user_email,
-                email_template=EmailTemplate.ProjectError.value
+                email_template=EmailTemplate.ProjectError
             )
 
     raise error
