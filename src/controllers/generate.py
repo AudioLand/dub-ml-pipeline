@@ -6,10 +6,8 @@ from fastapi import APIRouter
 from configs.logger import print_info_log, catch_error
 from constants.files import PROCESSING_FILES_DIR_PATH
 from constants.log_tags import LogTag
-from models.emailTemplates import EmailTemplate
 from models.file_type import FileType
 from models.project import ProjectStatus
-from services.emails.send_email_with_api import send_email_with_api
 from services.firebase.firestore.project import update_project_status_and_translated_link_by_id
 from services.firebase.firestore.user_tokens import update_user_tokens
 from services.firebase.storage.download_blob import download_blob
@@ -283,20 +281,20 @@ def generate(
 
         """Send email to user about successful project completion"""
 
-        print_info_log(
-            tag=LogTag.MAIN,
-            message="Sending email to user about successful project completion..."
-        )
-
-        send_email_with_api(
-            user_email=user_email,
-            email_template=EmailTemplate.SuccessfulProjectCompletion,
-        )
-
-        print_info_log(
-            tag=LogTag.MAIN,
-            message="Email was sent to user successfully."
-        )
+        # print_info_log(
+        #     tag=LogTag.MAIN,
+        #     message="Sending email to user about successful project completion..."
+        # )
+        #
+        # send_email_with_api(
+        #     user_email=user_email,
+        #     email_template=EmailTemplate.SuccessfulProjectCompletion,
+        # )
+        #
+        # print_info_log(
+        #     tag=LogTag.MAIN,
+        #     message="Email was sent to user successfully."
+        # )
 
         end_time = datetime.now()
         time_difference = end_time - start_time
