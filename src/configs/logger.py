@@ -3,9 +3,7 @@ import logging
 import sentry_sdk
 
 from constants.log_tags import LogTag
-from models.emailTemplates import EmailTemplate
 from models.project import ProjectStatus
-from services.emails.send_email_with_api import send_email_with_api
 from services.sentry.init_sentry import init_sentry
 
 init_sentry()
@@ -40,12 +38,12 @@ def catch_error(
             status=ProjectStatus.TRANSLATION_ERROR.value,
             translated_file_link=""
         )
-        # Send email to user about project error
-        if user_email is not None:
-            send_email_with_api(
-                user_email=user_email,
-                email_template=EmailTemplate.ProjectError
-            )
+        # # Send email to user about project error
+        # if user_email is not None:
+        #     send_email_with_api(
+        #         user_email=user_email,
+        #         email_template=EmailTemplate.ProjectError
+        #     )
 
     raise error
 
