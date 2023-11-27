@@ -28,6 +28,7 @@ def generate(
     voice_id: int,
     original_file_location: str,
     organization_id: str,
+    user_email: str,
 ):
     """
     Generates a dubbed version of the original video or audio file in the target language
@@ -38,6 +39,7 @@ def generate(
     :param voice_id: The identifier of the voice to be used for dubbing.
     :param original_file_location: The location of the original video file in the cloud storage.
     :param organization_id: The unique identifier of the organization.
+    :param user_email: The unique identifier of the organization.
 
     :return: Upload the dubbed video to Firebase Cloud Storage
 
@@ -48,6 +50,7 @@ def generate(
     ...     voice_id=165,
     ...     original_file_location="z8Z5j71WbmhaioUHDHh5KrBqEO13/07fsfECkwma6fVTDyqQf/test-video-1min.mp4",
     ...     organization_id="ZXIFYVhPAMql66Vg5f5Q"
+    ...     user_email="your@email.com"
     ... )
     Check if project_id, organization_id and original_file_location exist in Firebase
     """
@@ -276,6 +279,23 @@ def generate(
             message="User used tokens updated."
         )
 
+        """Send email to user about successful project completion"""
+
+        # print_info_log(
+        #     tag=LogTag.MAIN,
+        #     message="Sending email to user about successful project completion..."
+        # )
+        #
+        # send_email_with_api(
+        #     user_email=user_email,
+        #     email_template=EmailTemplate.SuccessfulProjectCompletion,
+        # )
+        #
+        # print_info_log(
+        #     tag=LogTag.MAIN,
+        #     message="Email was sent to user successfully."
+        # )
+
         end_time = datetime.now()
         time_difference = end_time - start_time
 
@@ -302,10 +322,12 @@ if __name__ == "__main__":
     test_voice_id = 165
     test_original_file_location = f"{test_user_id}/{test_project_id}/{test_file_name}"
     test_organization_id = "ZXIFYVhPAMql66Vg5f5Q"
+    test_user_email = "your@email.com"
     generate(
         project_id=test_project_id,
         target_language=test_target_language,
         voice_id=test_voice_id,
         original_file_location=test_original_file_location,
-        organization_id=test_organization_id
+        organization_id=test_organization_id,
+        user_email=test_user_email
     )
