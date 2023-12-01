@@ -1,12 +1,12 @@
 import re
 from typing import List
 
+from configs.logger import catch_error, print_info_log
 from constants.log_tags import LogTag
 from models.text_segment import TextSegment
 from services.translation.combine_text_segments import combine_text_segments
 from services.translation.split_text_to_chunks import split_text_to_chunks
 from services.translation.translate_text_chunk_with_gpt import translate_text_chunk_with_gpt
-from configs.logger import catch_error, print_info_log
 
 
 def translate_text(
@@ -78,15 +78,15 @@ def translate_text(
 
         # Check if segments count is different
         if original_segments_count != translated_segments_count:
-            for i in range(min(original_segments_count, translated_segments_count)):
-                print_info_log(
-                    tag=LogTag.TRANSLATE_TEXT,
-                    message=f"Original segment: {text_segments[i]}"
-                )
-                print_info_log(
-                    tag=LogTag.TRANSLATE_TEXT,
-                    message=f"Translated segment: {translated_text_segments[i]}\n"
-                )
+            # for i in range(min(original_segments_count, translated_segments_count)):
+            #     print_info_log(
+            #         tag=LogTag.TRANSLATE_TEXT,
+            #         message=f"Original segment: {text_segments[i]}"
+            #     )
+            #     print_info_log(
+            #         tag=LogTag.TRANSLATE_TEXT,
+            #         message=f"Translated segment: {translated_text_segments[i]}\n"
+            #     )
 
             print_info_log(
                 tag=LogTag.TRANSLATE_TEXT,
@@ -94,9 +94,13 @@ def translate_text(
             )
             print_info_log(
                 tag=LogTag.TRANSLATE_TEXT,
-                message=f"Translated count: {translated_segments_count}\n"
+                message=f"Translated count: {translated_segments_count}"
             )
-            raise Exception(f"Segments count not match.")
+            print_info_log(
+                tag=LogTag.TRANSLATE_TEXT,
+                message=f"Segments count not match.\n"
+            )
+            # raise Exception(f"Segments count not match.")
 
         for segment_index in range(len(translated_text_segments)):
             translated_segment = translated_text_segments[segment_index]
