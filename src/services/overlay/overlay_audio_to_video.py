@@ -8,16 +8,17 @@ from constants.files import VIDEO_SUPPORTED_EXTENSIONS, AUDIO_SUPPORTED_EXTENSIO
 from constants.log_tags import LogTag
 from models.text_segment import TextSegmentWithAudioTimestamp
 from configs.logger import catch_error, print_info_log
+from services.overlay.lower_volume_in_segments import lower_volume_in_segments
 from utils.files import get_file_extension, get_file_name
 
 
 def overlay_audio_to_video(
-    video_path: str,
-    audio_path: str,
-    text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
-    project_id: str,
-    silent_original_audio: bool = True,
-    show_logs: bool = False
+        video_path: str,
+        audio_path: str,
+        text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
+        project_id: str,
+        silent_original_audio: bool = True,
+        show_logs: bool = False
 ):
     try:
         if show_logs:
@@ -88,6 +89,8 @@ def overlay_audio_to_video(
                     message=f"Remove original video sound."
                 )
             final_audio = final_audio.silent(duration=original_video_duration * 1000)
+        else:
+            final_audio = lower_volume_in_segments(final_audio, text_segments_with_audio_timestamp, 15)
 
         for segment in text_segments_with_audio_timestamp:
             if show_logs:
