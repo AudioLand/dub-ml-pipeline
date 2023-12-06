@@ -4,21 +4,22 @@ from typing import List
 from moviepy.editor import VideoFileClip, AudioFileClip
 from pydub import AudioSegment
 
+from configs.logger import catch_error, print_info_log
+from constants.codecs import MP4_CODEC
 from constants.files import VIDEO_SUPPORTED_EXTENSIONS, AUDIO_SUPPORTED_EXTENSIONS, PROCESSING_FILES_DIR_PATH
 from constants.log_tags import LogTag
 from models.text_segment import TextSegmentWithAudioTimestamp
-from configs.logger import catch_error, print_info_log
 from services.overlay.lower_volume_in_segments import lower_volume_in_segments
 from utils.files import get_file_extension, get_file_name
 
 
 def overlay_audio_to_video(
-        video_path: str,
-        audio_path: str,
-        text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
-        project_id: str,
-        silent_original_audio: bool = True,
-        show_logs: bool = False
+    video_path: str,
+    audio_path: str,
+    text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
+    project_id: str,
+    silent_original_audio: bool = True,
+    show_logs: bool = False
 ):
     try:
         if show_logs:
@@ -155,6 +156,7 @@ def overlay_audio_to_video(
 
         final_video.write_videofile(
             filename=translated_video_path,
+            codec=MP4_CODEC,
             fps=original_video.fps,
             logger=None
         )
