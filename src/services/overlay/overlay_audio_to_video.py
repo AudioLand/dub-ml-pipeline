@@ -13,13 +13,26 @@ from services.overlay.lower_volume_in_segments import lower_volume_in_segments
 from utils.files import get_file_extension, get_file_name
 
 
+def speed_change(sound, speed=1.0):
+    # Manually override the frame_rate. This tells the computer how many
+    # samples to play per second
+    sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
+        'frame_rate': int(sound.frame_rate * speed)
+    })
+
+    # convert the sound with altered frame rate to a standard frame rate
+    # so that regular playback programs will work right. They often only
+    # know how to play audio at standard frame rate (like 44.1k)
+    return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
+
+
 def overlay_audio_to_video(
-    video_path: str,
-    audio_path: str,
-    text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
-    project_id: str,
-    silent_original_audio: bool = True,
-    show_logs: bool = False
+        video_path: str,
+        audio_path: str,
+        text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
+        project_id: str,
+        silent_original_audio: bool = True,
+        show_logs: bool = False
 ):
     try:
         if show_logs:
@@ -118,11 +131,11 @@ def overlay_audio_to_video(
                 )
 
             # Speed up audio if it's need
-            # if audio_duration - video_duration > 0.5:
-            #     ratio = audio_duration / video_duration
-            #     audio_segment = audio_segment.speedup(playback_speed=ratio)
-            #     if show_logs:
-            #         print(f"(overlay_audio) Speeding up audio by a factor of: {ratio:.2f}")
+            if audio_duration - video_duration > 0.5:
+                ratio = audio_duration / video_duration
+                audio_segment = speed_change(audio_segment, ratio)
+                if show_logs:
+                    print(f"(overlay_audio) Speeding up audio by a factor of: {ratio:.2f}")
 
             final_audio = final_audio.overlay(audio_segment, position=video_start_time * 1000)
             if show_logs:
