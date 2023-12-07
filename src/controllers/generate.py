@@ -74,13 +74,14 @@ def generate(
         original_file_extension = get_file_extension(original_file_location)
         # Combine project_id with the extracted extension
         local_original_file_path = f"{PROCESSING_FILES_DIR_PATH}/{project_id}.{original_file_extension}"
+        local_original_file_path = '/Users/lizashcherbakova/work/notion/files/en_short_2_speakers.mp4'
         # Download file
-        download_blob(
-            source_blob_path=source_blob_path,
-            destination_file_path=local_original_file_path,
-            project_id=project_id,
-            show_logs=True
-        )
+        # download_blob(
+        #     source_blob_path=source_blob_path,
+        #     destination_file_path=local_original_file_path,
+        #     project_id=project_id,
+        #     show_logs=True
+        # )
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -94,12 +95,12 @@ def generate(
             message="Updating project status to 'translating'..."
         )
 
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status=ProjectStatus.TRANSLATING.value,
-            translated_file_link="",
-            show_logs=True
-        )
+        # update_project_status_and_translated_link_by_id(
+        #     project_id=project_id,
+        #     status=ProjectStatus.TRANSLATING.value,
+        #     translated_file_link="",
+        #     show_logs=True
+        # )
 
         print_info_log(
             tag=LogTag.MAIN,
@@ -194,6 +195,7 @@ def generate(
         else:
             local_translated_file_path = local_translated_audio_path
 
+        return
         """Upload audio to cloud storage"""
 
         # Extract the path and filename from the original_file_location
@@ -249,12 +251,12 @@ def generate(
             message="Updating project status to 'translated'..."
         )
 
-        update_project_status_and_translated_link_by_id(
-            project_id=project_id,
-            status=ProjectStatus.TRANSLATED.value,
-            translated_file_link=file_public_link,
-            show_logs=True
-        )
+        # update_project_status_and_translated_link_by_id(
+        #     project_id=project_id,
+        #     status=ProjectStatus.TRANSLATED.value,
+        #     translated_file_link=file_public_link,
+        #     show_logs=True
+        # )
 
         print_info_log(
             tag=LogTag.MAIN,
