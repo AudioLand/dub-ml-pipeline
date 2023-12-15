@@ -1,6 +1,8 @@
 import os
+import tempfile
 from typing import List
 
+from audiostretchy.stretch import stretch_audio
 from moviepy.editor import VideoFileClip, AudioFileClip
 from pydub import AudioSegment
 
@@ -11,30 +13,15 @@ from constants.log_tags import LogTag
 from models.text_segment import TextSegmentWithAudioTimestamp
 from services.overlay.lower_volume_in_segments import lower_volume_in_segments
 from utils.files import get_file_extension, get_file_name
-from audiostretchy.stretch import stretch_audio
-import tempfile
-
-
-# def speed_change(sound, speed=1.0):
-#     # Manually override the frame_rate. This tells the computer how many
-#     # samples to play per second
-#     sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
-#         'frame_rate': int(sound.frame_rate * speed)
-#     })
-#
-#     # convert the sound with altered frame rate to a standard frame rate
-#     # so that regular playback programs will work right. They often only
-#     # know how to play audio at standard frame rate (like 44.1k)
-#     return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
 
 
 def overlay_audio_to_video(
-        video_path: str,
-        audio_path: str,
-        text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
-        project_id: str,
-        silent_original_audio: bool = True,
-        show_logs: bool = False
+    video_path: str,
+    audio_path: str,
+    text_segments_with_audio_timestamp: List[TextSegmentWithAudioTimestamp],
+    project_id: str,
+    silent_original_audio: bool = True,
+    show_logs: bool = False
 ):
     try:
         if show_logs:
@@ -134,21 +121,28 @@ def overlay_audio_to_video(
 
             # Speed up audio if it's need
             if audio_duration - video_duration > 0.5:
-                ratio = audio_duration / video_duration
-                with tempfile.NamedTemporaryFile(
-                         # dir=PROCESSING_FILES_DIR_PATH,
-                         dir=PROCESSING_FILES_DIR_PATH,
-                         suffix=".wav",
-                         delete=True
-                ) as temp_file:
-                    audio_segment.export(temp_file.name, format="wav")
-                    stretch_audio(temp_file.name, "output.wav", ratio)
-                    audio_segment = AudioSegment.from_file("output.wav")
-
-            #     audio_segment = speed_change(audio_segment, ratio)
+                # ratio = audio_duration / video_duration
+                ratio = video_duration / audio_duration
+                # Do not use "with", because temp file will not be deleted
+                temp_file = tempfile.NamedTemporaryFile(
+                    dir=f"{PROCESSING_FILES_DIR_PATH}/",
+                    suffix=".wav",
+                    delete=True
+                )
+                stretched_audio_file_path = f"stretched-audio-segment-{project_id}.wav"
+                audio_segment.export(temp_file.name, format="wav")
+                stretch_audio(temp_file.name, stretched_audio_file_path, ratio)
+                audio_segment = AudioSegment.from_file(stretched_audio_file_path)
+                # Close and auto-delete temp file
+                temp_file.close()
+                # Delete stretched audio segment file
+                os.remove(stretched_audio_file_path)
 
                 if show_logs:
-                    print(f"(overlay_audio) Speeding up audio by a factor of: {ratio:.2f}")
+                    print_info_log(
+                        tag=LogTag.OVERLAY_AUDIO,
+                        message=f"Speeding up audio by a factor of: {ratio:.2f}"
+                    )
 
             final_audio = final_audio.overlay(audio_segment, position=video_start_time * 1000)
             if show_logs:
@@ -205,6 +199,7 @@ def overlay_audio_to_video(
             )
 
         return translated_video_path
+
     except Exception as e:
         catch_error(
             tag=LogTag.OVERLAY_AUDIO,
@@ -216,60 +211,68 @@ def overlay_audio_to_video(
 # For local test
 if __name__ == "__main__":
     test_text_segments_with_audio_timestamps = [
-        TextSegmentWithAudioTimestamp(timestamp=(0.0, 3.36),
+        TextSegmentWithAudioTimestamp(original_timestamp=(0.0, 3.36),
                                       text='Я просыпаюсь утром и хочу потянуться к своему телефону,',
                                       audio_timestamp=(2850.0, 6957.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(3.36, 5.74), text='но я знаю, что даже если бы я прибавил яркость',
+        TextSegmentWithAudioTimestamp(original_timestamp=(3.36, 5.74),
+                                      text='но я знаю, что даже если бы я прибавил яркость',
                                       audio_timestamp=(9446.0, 12723.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(5.74, 7.0), text='на экране этого телефона,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(5.74, 7.0), text='на экране этого телефона,',
                                       audio_timestamp=(15398.0, 17503.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(7.0, 10.28),
+        TextSegmentWithAudioTimestamp(original_timestamp=(7.0, 10.28),
                                       text='она все равно не достаточно ярка, чтобы вызвать резкий прилив кортизола.',
                                       audio_timestamp=(19941.0, 24929.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(10.28, 14.36),
+        TextSegmentWithAudioTimestamp(original_timestamp=(10.28, 14.36),
                                       text='И чтобы мне быть наиболее бодрым и сосредоточенным в течение',
                                       audio_timestamp=(28447.0, 32586.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(14.36, 16.16), text='дня и оптимизировать свой сон ночью.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(14.36, 16.16), text='дня и оптимизировать свой сон ночью.',
                                       audio_timestamp=(35128.0, 37793.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(16.16, 20.2), text='Поэтому я встаю с кровати и выхожу на улицу.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(16.16, 20.2),
+                                      text='Поэтому я встаю с кровати и выхожу на улицу.',
                                       audio_timestamp=(41272.0, 44726.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(20.2, 23.34), text='И если это яркий, чистый день,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(20.2, 23.34), text='И если это яркий, чистый день,',
                                       audio_timestamp=(48258.0, 50784.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(23.34, 25.18), text='и солнце низко в небе,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(23.34, 25.18), text='и солнце низко в небе,',
                                       audio_timestamp=(53158.0, 55199.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(25.18, 27.18), text='или уже начинает подниматься над головой,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(25.18, 27.18),
+                                      text='или уже начинает подниматься над головой,',
                                       audio_timestamp=(57661.0, 60527.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(27.18, 28.7), text='то, что мы называем низким солнечным углом,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(27.18, 28.7),
+                                      text='то, что мы называем низким солнечным углом,',
                                       audio_timestamp=(62941.0, 66104.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(28.7, 31.74),
+        TextSegmentWithAudioTimestamp(original_timestamp=(28.7, 31.74),
                                       text='тогда я знаю, что вышел на улицу в правильное время.',
                                       audio_timestamp=(68637.0, 72079.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(31.74, 34.78), text='Если небо затянуто облаками и я не вижу солнца,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(31.74, 34.78),
+                                      text='Если небо затянуто облаками и я не вижу солнца,',
                                       audio_timestamp=(75457.0, 79046.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(34.78, 36.38), text='то я также знаю, что делаю хорошее дело,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(34.78, 36.38),
+                                      text='то я также знаю, что делаю хорошее дело,',
                                       audio_timestamp=(81580.0, 84705.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(36.38, 38.56), text='потому что оказывается, особенно в облачные дни,',
+        TextSegmentWithAudioTimestamp(original_timestamp=(36.38, 38.56),
+                                      text='потому что оказывается, особенно в облачные дни,',
                                       audio_timestamp=(87238.0, 90644.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(38.56, 40.66),
+        TextSegmentWithAudioTimestamp(original_timestamp=(38.56, 40.66),
                                       text='вы хотите выйти на улицу и получить как можно больше световой энергии',
                                       audio_timestamp=(93249.0, 97974.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(40.66, 42.42), text='или фотонов в своих глазах.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(40.66, 42.42), text='или фотонов в своих глазах.',
                                       audio_timestamp=(100556.0, 102790.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(42.42, 44.3), text='Но допустим, это очень ясный день',
+        TextSegmentWithAudioTimestamp(original_timestamp=(42.42, 44.3), text='Но допустим, это очень ясный день',
                                       audio_timestamp=(106297.0, 109257.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(44.3, 46.44), text='и я вижу, где солнце.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(44.3, 46.44), text='и я вижу, где солнце.',
                                       audio_timestamp=(111689.0, 113779.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(46.44, 49.24), text='Мне не нужно смотреть прямо на солнце.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(46.44, 49.24), text='Мне не нужно смотреть прямо на солнце.',
                                       audio_timestamp=(117313.0, 120052.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(49.24, 52.2), text='Если оно очень низко в небе, я могу это сделать',
+        TextSegmentWithAudioTimestamp(original_timestamp=(49.24, 52.2),
+                                      text='Если оно очень низко в небе, я могу это сделать',
                                       audio_timestamp=(123560.0, 127346.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(52.2, 54.52),
+        TextSegmentWithAudioTimestamp(original_timestamp=(52.2, 54.52),
                                       text='потому что моим глазам это не причинит большой боли.',
                                       audio_timestamp=(129914.0, 133599.0)),
-        TextSegmentWithAudioTimestamp(timestamp=(54.52, 56.84), text='Однако, если солнце немного ярче.',
+        TextSegmentWithAudioTimestamp(original_timestamp=(54.52, 56.84), text='Однако, если солнце немного ярче.',
                                       audio_timestamp=(136943.0, 139977.0))
     ]
-    test_project_id = "07fsfECkwma6fVTDyqQf"
+    test_project_id = "u4eep3w19GImXUqnbPWc"
     test_video_path = f"{PROCESSING_FILES_DIR_PATH}/{test_project_id}.mp4"
     test_audio_path = f"{PROCESSING_FILES_DIR_PATH}/{test_project_id}-translated.mp3"
     overlay_audio_to_video(
