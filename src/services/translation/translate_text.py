@@ -102,7 +102,7 @@ def translate_text(
             )
             # raise Exception(f"Segments count not match.")
 
-        for segment_index in range(len(translated_text_segments)):
+        for segment_index in range(min(original_segments_count, translated_segments_count)):
             translated_segment = translated_text_segments[segment_index]
             text_segments[segment_index].text = translated_segment
 
